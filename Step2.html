@@ -1,0 +1,194 @@
+<div class="step-content">
+  <h2 id="step2Title">Request Details</h2>
+  
+  <!-- Others Request Type Fields -->
+  <div id="othersFields" class="dynamic-fields">
+    <div class="form-group">
+      <label for="numberOfKOLsOthers">Number of KOLs <span class="required">*</span></label>
+      <div class="kol-stepper">
+        <button type="button" class="stepper-btn stepper-minus" data-target="numberOfKOLsOthers" aria-label="Decrease">−</button>
+        <input type="number" id="numberOfKOLsOthers" name="numberOfKOLs" min="1" step="1" value="" placeholder="0">
+        <button type="button" class="stepper-btn stepper-plus" data-target="numberOfKOLsOthers" aria-label="Increase">+</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="kolDescriptionOthers">KOL Description <span class="required">*</span></label>
+      <textarea id="kolDescriptionOthers" name="kolDescription" placeholder="Please provide your client's complete requirements."></textarea>
+    </div>
+  </div>
+
+  <!-- Editorial Participation Fields -->
+  <div id="editorialFields" class="dynamic-fields">
+    <div class="form-group">
+      <label>KOL Ambassadors <span class="required">*</span></label>
+      <div class="checkbox-group compact" id="editorialTypeGroup">
+        <div class="checkbox-item">
+          <input type="checkbox" id="editPEPCrew" name="editorialType" value="PEP Crew">
+          <label for="editPEPCrew">PEP Crew</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="editCosmoVibeTribe" name="editorialType" value="Cosmo Vibe Tribe">
+          <label for="editCosmoVibeTribe">Cosmo Vibe Tribe</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="editSPSquad" name="editorialType" value="SP Squad">
+          <label for="editSPSquad">SP Squad</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="editSPBOE" name="editorialType" value="SP Board of Experts">
+          <label for="editSPBOE">SP Board of Experts</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="editPreviewClique" name="editorialType" value="Preview Clique">
+          <label for="editPreviewClique">Preview Clique</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="editSpotCircle" name="editorialType" value="Spot Circle">
+          <label for="editSpotCircle">Spot Circle</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group" id="editorialInclusionsPreview" style="display: none;">
+      <label>Detailed KOL Ambassadors <span class="required">*</span></label>
+      <div id="inclusionsList" class="inclusions-box">
+        <!-- Inclusions will be populated here as checkboxes -->
+      </div>
+    </div>
+
+    <div class="form-group" id="otherInclusionGroup" style="display: none;">
+      <label for="otherInclusion">Other Inclusions <span class="required">*</span></label>
+      <textarea id="otherInclusion" name="otherInclusion" placeholder="Enter other inclusions, one per line.&#10;Example:&#10;Custom video format&#10;Special interview segment&#10;Behind-the-scenes content" rows="4"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="numberOfKOLsEditorial">Number of KOLs <span class="required">*</span></label>
+      <div class="kol-stepper">
+        <button type="button" class="stepper-btn stepper-minus" data-target="numberOfKOLsEditorial" aria-label="Decrease">−</button>
+        <input type="number" id="numberOfKOLsEditorial" name="numberOfKOLs" min="1" step="1" value="" placeholder="0">
+        <button type="button" class="stepper-btn stepper-plus" data-target="numberOfKOLsEditorial" aria-label="Increase">+</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="kolDescriptionEditorial">KOL Description <span class="required">*</span></label>
+      <textarea id="kolDescriptionEditorial" name="kolDescription" placeholder="Please provide your client's complete requirements."></textarea>
+    </div>
+  </div>
+
+  <!-- Media Partnership Fields -->
+  <div id="mediaFields" class="dynamic-fields">
+    <div class="form-group">
+      <label>KOL Ambassadors <span class="required">*</span></label>
+      <div class="checkbox-group compact" id="kolAmbassadorGroup">
+        <div class="checkbox-item">
+          <input type="checkbox" id="ambPEPCrew" name="kolAmbassadorType" value="PEP Crew">
+          <label for="ambPEPCrew">PEP Crew</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="ambCosmoVibeTribe" name="kolAmbassadorType" value="Cosmo Vibe Tribe">
+          <label for="ambCosmoVibeTribe">Cosmo Vibe Tribe</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="ambSPSquad" name="kolAmbassadorType" value="SP Squad">
+          <label for="ambSPSquad">SP Squad</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="ambSPBOE" name="kolAmbassadorType" value="SP Board of Experts">
+          <label for="ambSPBOE">SP Board of Experts</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="ambPreviewClique" name="kolAmbassadorType" value="Preview Clique">
+          <label for="ambPreviewClique">Preview Clique</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="ambSpotCircle" name="kolAmbassadorType" value="Spot Circle">
+          <label for="ambSpotCircle">Spot Circle</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="numberOfKOLsMedia">Number of KOLs <span class="required">*</span></label>
+      <div class="kol-stepper">
+        <button type="button" class="stepper-btn stepper-minus" data-target="numberOfKOLsMedia" aria-label="Decrease">−</button>
+        <input type="number" id="numberOfKOLsMedia" name="numberOfKOLs" min="1" step="1" value="" placeholder="0">
+        <button type="button" class="stepper-btn stepper-plus" data-target="numberOfKOLsMedia" aria-label="Increase">+</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="kolDescriptionMedia">KOL Description <span class="required">*</span></label>
+      <textarea id="kolDescriptionMedia" name="kolDescription" placeholder="Please provide your client's complete requirements."></textarea>
+    </div>
+  </div>
+
+  <!-- Paid Partnership Fields -->
+  <div id="paidFields" class="dynamic-fields">
+    <div class="form-group">
+      <label for="pitchGo">Pitch/GO <span class="required">*</span></label>
+      <select id="pitchGo" name="pitchGo" required>
+        <option value="">-- Select Status --</option>
+        <option value="Pitch">Pitch</option>
+        <option value="GO">GO</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>KOL Ambassadors <span class="required">*</span></label>
+      <div class="checkbox-group compact" id="paidTypeGroup">
+        <div class="checkbox-item">
+          <input type="checkbox" id="paidPEPCrew" name="paidType" value="PEP Crew">
+          <label for="paidPEPCrew">PEP Crew</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="paidCosmoVibeTribe" name="paidType" value="Cosmo Vibe Tribe">
+          <label for="paidCosmoVibeTribe">Cosmo Vibe Tribe</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="paidSPSquad" name="paidType" value="SP Squad">
+          <label for="paidSPSquad">SP Squad</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="paidSPBOE" name="paidType" value="SP Board of Experts">
+          <label for="paidSPBOE">SP Board of Experts</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="paidPreviewClique" name="paidType" value="Preview Clique">
+          <label for="paidPreviewClique">Preview Clique</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="paidSpotCircle" name="paidType" value="Spot Circle">
+          <label for="paidSpotCircle">Spot Circle</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group" id="paidInclusionsPreview" style="display: none;">
+      <label>Detailed KOL Ambassadors <span class="required">*</span></label>
+      <div id="paidInclusionsList" class="inclusions-box">
+        <!-- Inclusions will be populated here as checkboxes -->
+      </div>
+    </div>
+
+    <div class="form-group" id="paidOtherInclusionGroup" style="display: none;">
+      <label for="paidOtherInclusion">Other Inclusions <span class="required">*</span></label>
+      <textarea id="paidOtherInclusion" name="paidOtherInclusion" placeholder="Enter other inclusions, one per line.&#10;Example:&#10;Custom video format&#10;Special interview segment&#10;Behind-the-scenes content" rows="4"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="numberOfKOLsPaid">Number of KOLs <span class="required">*</span></label>
+      <div class="kol-stepper">
+        <button type="button" class="stepper-btn stepper-minus" data-target="numberOfKOLsPaid" aria-label="Decrease">−</button>
+        <input type="number" id="numberOfKOLsPaid" name="numberOfKOLs" min="1" step="1" value="" placeholder="0">
+        <button type="button" class="stepper-btn stepper-plus" data-target="numberOfKOLsPaid" aria-label="Increase">+</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="kolDescriptionPaid">KOL Description <span class="required">*</span></label>
+      <textarea id="kolDescriptionPaid" name="kolDescription" placeholder="Please provide your client's complete requirements."></textarea>
+    </div>
+  </div>
+</div>

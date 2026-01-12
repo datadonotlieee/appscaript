@@ -1,0 +1,159 @@
+  <div class="step-content">
+    <div class="step-header-with-toggle">
+      <h2>KOL Deliverables & Requirements</h2>
+      <div id="crossPostingContainer" class="cross-posting-inline" style="display: none;">
+        <label class="toggle-switch-small">
+          <input type="checkbox" id="crossPostingToggle" name="crossPosting" value="yes">
+          <span class="toggle-slider-small"></span>
+        </label>
+        <span class="toggle-label-small">Cross-posting</span>
+      </div>
+    </div>
+    
+    <!-- Post Engagement -->
+    <div class="deliverables-section" id="postEngagementSection">
+      <h3 class="section-header">Post Engagement</h3>
+      <div class="checkbox-group compact" id="postEngagementCheckboxes">
+        <!-- Dynamically populated based on type of request -->
+      </div>
+      
+      <!-- Social Posting Details - Shows when social deliverables selected -->
+      <div id="postingRequirementsSection" class="conditional-section">
+        <div class="conditional-content">
+          <h4>Social Posting Details</h4>
+          
+          <div class="form-group">
+            <label for="targetLiveDate">Target Live Date <span class="required">*</span></label>
+            <input type="date" id="targetLiveDate" name="targetLiveDate">
+          </div>
+
+          <div class="form-group">
+            <label for="mandatories">Mandatories <span class="required">*</span></label>
+            <textarea id="mandatories" name="mandatories" placeholder="Please provide specific instructions for posting."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="references">References (URL)</label>
+            <input type="text" id="references" name="references" placeholder="https://">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Event Requirements -->
+    <div class="deliverables-section" id="eventRequirementsSection">
+      <h3 class="section-header">Event Requirements</h3>
+      <div class="checkbox-group compact" id="eventRequirementsCheckboxes">
+        <!-- Dynamically populated based on type of request -->
+      </div>
+    </div>
+
+    <!-- Talent Requirements -->
+    <div class="deliverables-section" id="talentRequirementsSection">
+      <h3 class="section-header">Talent Requirements</h3>
+      <div class="checkbox-group compact" id="talentRequirementsCheckboxes">
+        <!-- Dynamically populated based on type of request -->
+      </div>
+      
+      <!-- Event Details Section - Shows when event OR talent deliverables selected -->
+      <div id="eventDetailsSection" class="conditional-section">
+        <div class="conditional-content">
+          <h4>Details of Event Attendance / Talent Requirements</h4>
+
+          <div class="form-group">
+            <label for="eventActivityName">Event / Activity Name <span class="required">*</span></label>
+            <input type="text" id="eventActivityName" name="eventActivityName">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group form-group-half">
+              <label for="eventDate">Date <span class="required">*</span></label>
+              <input type="date" id="eventDate" name="eventDate">
+            </div>
+            <div class="form-group form-group-half">
+              <label>Time <span class="required">*</span></label>
+              <div class="time-inputs-container">
+                <div class="time-input-wrapper" id="startTimeWrapper">
+                  <span class="time-input-label">Start</span>
+                  <div class="time-input-trigger" id="startTimeTrigger">
+                    <input type="text" class="time-display-input" id="startTimeDisplay" placeholder="--:-- --" maxlength="8" autocomplete="off">
+                    <span class="time-trigger-icon">▼</span>
+                  </div>
+                  <div class="time-picker-dropdown" id="startTimeDropdown">
+                    <div class="time-picker-columns">
+                      <div class="time-column" data-type="hour">
+                        <div class="time-column-scroll" id="startHourScroll"></div>
+                      </div>
+                      <div class="time-column" data-type="minute">
+                        <div class="time-column-scroll" id="startMinuteScroll"></div>
+                      </div>
+                      <div class="time-column" data-type="period">
+                        <div class="time-column-scroll" id="startPeriodScroll"></div>
+                      </div>
+                    </div>
+                    <div class="time-picker-highlight"></div>
+                    <div class="time-picker-footer">
+                      <button type="button" class="time-btn-cancel" onclick="closeTimePicker('start')">CANCEL</button>
+                      <button type="button" class="time-btn-ok" onclick="confirmTimePicker('start')">OK</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="time-input-wrapper" id="endTimeWrapper">
+                  <span class="time-input-label">End</span>
+                  <div class="time-input-trigger" id="endTimeTrigger">
+                    <input type="text" class="time-display-input" id="endTimeDisplay" placeholder="--:-- --" maxlength="8" autocomplete="off">
+                    <span class="time-trigger-icon">▼</span>
+                  </div>
+                  <div class="time-picker-dropdown" id="endTimeDropdown">
+                    <div class="time-picker-columns">
+                      <div class="time-column" data-type="hour">
+                        <div class="time-column-scroll" id="endHourScroll"></div>
+                      </div>
+                      <div class="time-column" data-type="minute">
+                        <div class="time-column-scroll" id="endMinuteScroll"></div>
+                      </div>
+                      <div class="time-column" data-type="period">
+                        <div class="time-column-scroll" id="endPeriodScroll"></div>
+                      </div>
+                    </div>
+                    <div class="time-picker-highlight"></div>
+                    <div class="time-picker-footer">
+                      <button type="button" class="time-btn-cancel" onclick="closeTimePicker('end')">CANCEL</button>
+                      <button type="button" class="time-btn-ok" onclick="confirmTimePicker('end')">OK</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <input type="hidden" id="eventTimeStart" name="eventTimeStart">
+              <input type="hidden" id="eventTimeEnd" name="eventTimeEnd">
+              <input type="hidden" id="eventTime" name="eventTime">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="eventVenueAddress">Address (Venue) <span class="required">*</span></label>
+            <textarea id="eventVenueAddress" name="eventVenueAddress" placeholder="ABC Restaurant,&#10;Poblacion, Makati City"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="eventNotes">Notes</label>
+            <textarea id="eventNotes" name="eventNotes" placeholder="Additional details about the event or activity."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Other Deliverable -->
+    <div class="deliverables-section" id="otherDeliverablesSection">
+      <h3 class="section-header">Others</h3>
+      <div class="checkbox-group compact">
+        <div class="checkbox-item">
+          <input type="checkbox" id="otherDeliverableCheck" data-category="other">
+          <label for="otherDeliverableCheck">Others, please specify</label>
+        </div>
+      </div>
+      <div id="otherDeliverableGroup" class="conditional-field">
+        <textarea id="otherDeliverable" name="otherDeliverable" placeholder="Provide other details not mentioned in the choices above." rows="4"></textarea>
+      </div>
+    </div>
+  </div>

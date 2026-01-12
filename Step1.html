@@ -1,0 +1,91 @@
+<div class="step-content">
+  <h2>Requestor Details</h2>
+    
+    <div class="form-group">
+      <label for="requestorName">Name <span class="required">*</span></label>
+      <input type="text" id="requestorName" name="requestorName" required>
+    </div>
+ 
+    <div class="form-group">
+      <label for="requestorEmail">Email <span class="required">*</span></label>
+      <input type="email" id="requestorEmail" name="requestorEmail" required>
+    </div>
+
+    <div class="form-group">
+      <label for="businessUnit">Business Unit <span class="required">*</span></label>
+      <select id="businessUnit" name="businessUnit" required>
+        <option value="">-- Select Business Unit --</option>
+        <option value="Online Editorial">Online Editorial</option>
+        <option value="Online Publishing">Online Publishing</option>
+        <option value="Online Revenue">Online Revenue</option>
+        <option value="SummitX Creatives">SummitX Creatives</option>
+        <option value="SummitX Events">SummitX Events</option>
+        <option value="SummitX Ops">SummitX Ops</option>
+        <option value="Summit Video Team">Summit Video Team</option>
+        <option value="Others">Others</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="businessUnitOtherGroup" style="display: none;">
+      <label for="businessUnitOther">Please specify Business Unit <span class="required">*</span></label>
+      <input type="text" id="businessUnitOther" name="businessUnitOther" placeholder="Enter your business unit">
+    </div>
+
+    <div class="form-group">
+      <label>Participating Brands <span class="required">*</span></label>
+      <div class="checkbox-group compact" id="participatingBrandsGroup">
+        <div class="checkbox-item">
+          <input type="checkbox" id="brandPEP" name="participatingBrands" value="PEP">
+          <label for="brandPEP">PEP</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="brandCosmopolitan" name="participatingBrands" value="Cosmopolitan">
+          <label for="brandCosmopolitan">Cosmopolitan</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="brandSmartParenting" name="participatingBrands" value="Smart Parenting">
+          <label for="brandSmartParenting">Smart Parenting</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="brandEsquire" name="participatingBrands" value="Esquire">
+          <label for="brandEsquire">Esquire</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="brandPreview" name="participatingBrands" value="Preview">
+          <label for="brandPreview">Preview</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="brandSpot" name="participatingBrands" value="Spot">
+          <label for="brandSpot">Spot</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="brandSpin" name="participatingBrands" value="Spin">
+          <label for="brandSpin">Spin</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="brandCandy" name="participatingBrands" value="Candy">
+          <label for="brandCandy">Candy</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="participatingBrandYummy" name="participatingBrands" value="Yummy">
+          <label for="participatingBrandYummy">Yummy</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="typeOfRequest">Type of Request <span class="required">*</span></label>
+      <select id="typeOfRequest" name="typeOfRequest" required>
+        <option value="">-- Select Type --</option>
+        <option value="Paid Partnership">Paid Partnership</option>
+        <option value="Editorial Participation">Editorial Participation</option>
+        <option value="Media Partnership">Media Partnership</option>
+        <option value="Others">Others, please specify below</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="typeOfRequestOtherGroup" style="display: none;">
+      <label for="typeOfRequestOther">Please specify Type of Request <span class="required">*</span></label>
+      <input type="text" id="typeOfRequestOther" name="typeOfRequestOther" placeholder="Enter type of request">
+    </div>
+</div>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clout+KOL Request Form - Summit Media</title>
+  
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="Clout+KOL Request Form - Summit Media">
+  <meta name="description" content="Submit your KOL (Key Opinion Leader) request for Editorial Participation, Media Partnership, or Paid Partnership with Summit Media brands.">
+  <meta name="author" content="Summit Media">
+  <meta name="keywords" content="KOL, influencer, Summit Media, PEP, Cosmopolitan, Preview, Spot, partnership, editorial">
+  
+  <!-- 
+    =====================================================
+    SOCIAL MEDIA PREVIEW IMAGE SETUP
+    =====================================================
+    
+    To enable rich link previews when sharing this form on Slack, Teams, 
+    Facebook, LinkedIn, Twitter, etc., you need to host an image and 
+    update the URLs below.
+    
+    OPTION 1: Upload to Google Drive
+    1. Save the SVG below as an image (1200x630px PNG recommended)
+    2. Upload to Google Drive
+    3. Right-click > Share > "Anyone with the link can view"
+    4. Replace YOUR_FILE_ID in the URLs below
+    
+    OPTION 2: Use Imgur or other hosting
+    1. Upload your image to imgur.com
+    2. Copy the direct link and paste below
+    
+    SVG TEMPLATE (matches your logo):
+    <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+      <rect fill="#fef5f5" width="1200" height="630"/>
+      <polygon points="600,80 480,280 550,280" fill="#8B0000"/>
+      <polygon points="600,80 550,280 650,280" fill="#C41E3A"/>
+      <polygon points="600,80 650,280 720,280" fill="#E85A70"/>
+      <text x="600" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="600" letter-spacing="8" fill="#262626">SUMMIT</text>
+      <text x="600" y="400" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="500" letter-spacing="4" fill="#C41E3A">MEDIA</text>
+      <text x="600" y="480" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#262626">Clout+KOL Request Form</text>
+      <text x="600" y="530" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" fill="#737373">Submit your KOL partnership request</text>
+    </svg>
+    =====================================================
+  -->
+  
+  <!-- Open Graph / Facebook / LinkedIn / Slack / Discord -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Clout+KOL Request Form">
+  <meta property="og:description" content="Submit your KOL request for Editorial Participation, Media Partnership, or Paid Partnership with Summit Media brands including PEP, Cosmopolitan, Preview, Spot, and more.">
+  <meta property="og:site_name" content="Summit Media">
+  <meta property="og:image" content="https://drive.google.com/uc?export=view&id=1pFt-D13x57EpDM_6SKOP_hi-msqqdhJ8">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Summit Media - Clout+KOL Request Form">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Clout+KOL Request Form - Summit Media">
+  <meta name="twitter:description" content="Submit your KOL request for Editorial Participation, Media Partnership, or Paid Partnership with Summit Media brands.">
+  <meta name="twitter:image" content="https://drive.google.com/uc?export=view&id=1pFt-D13x57EpDM_6SKOP_hi-msqqdhJ8">
+  <meta name="twitter:image:alt" content="Summit Media - Clout+KOL Request Form">
+  
+  <!-- Additional Meta -->
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#C41E3A">
+  <meta name="msapplication-TileColor" content="#C41E3A">
+  
+  <!-- Apple Touch Icon (for iOS bookmarks) - uses same logo as header -->
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23C41E3A' width='180' height='180' rx='20'/><polygon points='90,30 50,120 75,120' fill='%238B0000'/><polygon points='90,30 75,120 105,120' fill='%23fff'/><polygon points='90,30 105,120 130,120' fill='%23E85A70'/><text x='90' y='155' text-anchor='middle' font-family='Arial' font-size='20' font-weight='bold' fill='white'>SM</text></svg>">>
+  
+  <?!= include('Styles'); ?>
+</head>
+<body>
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container" role="alert" aria-live="polite"></div>
+
+  <!-- Loading Spinner - OUTSIDE container -->
+  <div id="loadingSpinner" class="loading-spinner">
+    <div class="spinner"></div>
+    <p>Submitting your request...</p>
+  </div>
+
+  <div class="container">
+    
+    <!-- HEADER - Logo + Title Inline -->
+    <header class="form-header">
+      <div class="logo-header">
+        <svg width="72" height="68" viewBox="0 0 120 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Summit Media Official Logo -->
+          <!-- Triangle segments from left to right -->
+          <polygon points="60,5 20,70 45,70" fill="#6B1C23"/>
+          <polygon points="60,5 45,70 60,70" fill="#C41E3A"/>
+          <polygon points="60,5 60,70 75,70" fill="#E23D4E"/>
+          <polygon points="60,5 75,70 100,70" fill="#E8737D"/>
+          <!-- SUMMIT text -->
+          <text x="60" y="88" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="600" letter-spacing="3" fill="#1a1a1a">SUMMIT</text>
+          <!-- MEDIA text -->
+          <text x="60" y="103" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="600" letter-spacing="2.5" fill="#C41E3A">MEDIA</text>
+        </svg>
+      </div>
+      <div class="header-text">
+        <h1 class="form-title">Clout+KOL Request Form</h1>
+      </div>
+    </header>
+
+    <div class="progress-bar">
+      <div class="progress-step active" data-step="1">
+        <div class="step-number">1</div>
+        <div class="step-label">Requestor's Info</div>
+      </div>
+      <div class="progress-step" data-step="2">
+        <div class="step-number">2</div>
+        <div class="step-label">Details</div>
+      </div>
+      <div class="progress-step" data-step="3">
+        <div class="step-number">3</div>
+        <div class="step-label">Deliverables</div>
+      </div>
+      <div class="progress-step" data-step="4">
+        <div class="step-number">4</div>
+        <div class="step-label">Review</div>
+      </div>
+    </div>
+
+    <form id="kolForm">
+      <div id="step1" class="form-step active">
+        <?!= include('Step1'); ?>
+      </div>
+
+      <div id="step2" class="form-step">
+        <?!= include('Step2'); ?>
+      </div>
+
+      <div id="step3" class="form-step">
+        <?!= include('Step3'); ?>
+      </div>
+
+      <div id="step4" class="form-step">
+        <?!= include('Step4'); ?>
+      </div>
+
+      <div class="form-navigation">
+        <button type="button" id="prevBtn" class="btn btn-secondary" style="display:none;">Previous</button>
+        <button type="button" id="nextBtn" class="btn btn-primary">Next</button>
+        <button type="button" id="submitBtn" class="btn btn-success" style="display:none;">Submit Request</button>
+      </div>
+    </form>
+
+    <!-- Success Message -->
+    <div id="successMessage" class="success-message" style="display: none;">
+      <h2>Request Submitted Successfully!</h2>
+      <p>Your KOL request has been submitted and is being processed.</p>
+      <div class="request-id-box">
+        <div class="request-id-label">Request ID</div>
+        <div class="request-id-value" id="requestIdDisplay"></div>
+      </div>
+      <p style="color: #666; font-size: 0.875rem; margin-bottom: 24px;">Please screenshot this page or save the Request ID for your reference.</p>
+      <button type="button" class="btn btn-primary" onclick="resetForm()">Submit Another Request</button>
+    </div>
+  </div>
+
+  <?!= include('Scripts'); ?>
+</body>
+</html>

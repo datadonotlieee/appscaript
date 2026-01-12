@@ -1,0 +1,2239 @@
+<script>
+let currentStep = 1;
+const totalSteps = 4;
+
+document.addEventListener('DOMContentLoaded', function() {
+  setupNavigation();
+  setupTypeOfRequestListener();
+  setupDeliverablesListener();
+  setupBusinessUnitListener();
+  setupTimePickerSync();
+  setupInputValidation();
+  setupNumberSteppers();
+  setupScrollIntoView();
+  showStep(currentStep);
+});
+
+/* ============================================
+   SCROLL INTO VIEW FOR BETTER UX
+   ============================================ */
+
+/**
+ * Scrolls an element into the center of the viewport
+ */
+function scrollElementIntoView(element, options = {}) {
+  if (!element) return;
+  
+  const defaultOptions = {
+    behavior: 'smooth',
+    block: 'center',
+    inline: 'nearest'
+  };
+  
+  const scrollOptions = { ...defaultOptions, ...options };
+  
+  // Small delay to allow any UI changes to complete
+  setTimeout(() => {
+    element.scrollIntoView(scrollOptions);
+  }, options.delay || 100);
+}
+
+/**
+ * Sets up automatic scroll-into-view for form elements
+ */
+function setupScrollIntoView() {
+  // All focusable form elements
+  const focusableSelectors = [
+    'input[type="text"]',
+    'input[type="email"]',
+    'input[type="date"]',
+    'input[type="time"]',
+    'input[type="number"]',
+    'select',
+    'textarea'
+  ].join(', ');
+  
+  // Add focus listener to all form inputs
+  document.addEventListener('focus', function(e) {
+    const target = e.target;
+    
+    // Check if it's a focusable form element (but not time-display-input which has its own handler)
+    if (target.matches(focusableSelectors) && !target.classList.contains('time-display-input')) {
+      scrollElementIntoView(target.closest('.form-group') || target, { delay: 150 });
+    }
+  }, true);
+  
+  // Handle click on checkbox/radio labels
+  document.addEventListener('click', function(e) {
+    const checkboxItem = e.target.closest('.checkbox-item');
+    if (checkboxItem) {
+      scrollElementIntoView(checkboxItem, { delay: 50, block: 'nearest' });
+    }
+  });
+}
+
+/* ============================================
+   NUMBER STEPPER CONTROLS
+   ============================================ */
+
+/**
+ * Sets up the number stepper arrows functionality
+ */
+function setupNumberSteppers() {
+  document.addEventListener('click', function(e) {
+    // Handle old stepper-arrow buttons (if any remain)
+    if (e.target.classList.contains('stepper-arrow')) {
+      const targetId = e.target.dataset.target;
+      const input = document.getElementById(targetId);
+      if (!input) return;
+      
+      const currentValue = parseInt(input.value) || 0;
+      const min = parseInt(input.min) || 0;
+      const step = parseInt(input.step) || 1;
+      
+      if (e.target.classList.contains('stepper-up')) {
+        input.value = currentValue + step;
+      } else if (e.target.classList.contains('stepper-down')) {
+        const newValue = currentValue - step;
+        input.value = newValue >= min ? newValue : min;
+      }
+      
+      // Trigger change event for any listeners
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    
+    // Handle KOL stepper buttons (inline style)
+    const kolBtn = e.target.closest('.kol-stepper .stepper-btn');
+    if (kolBtn) {
+      const targetId = kolBtn.dataset.target;
+      const input = document.getElementById(targetId);
+      if (!input) return;
+      
+      const currentValue = parseInt(input.value) || 0;
+      const min = parseInt(input.min) || 1;
+      const step = parseInt(input.step) || 1;
+      
+      if (kolBtn.classList.contains('stepper-plus')) {
+        input.value = currentValue + step;
+      } else if (kolBtn.classList.contains('stepper-minus')) {
+        input.value = Math.max(min, currentValue - step);
+      }
+      
+      // Trigger change event for any listeners
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      
+      // Update minus button state
+      updateKolMinusButtonState(input);
+    }
+  });
+  
+  // Setup input change listeners for KOL steppers
+  document.querySelectorAll('.kol-stepper input[type="number"]').forEach(input => {
+    input.addEventListener('change', function() {
+      const min = parseInt(this.min) || 1;
+      if (parseInt(this.value) < min && this.value !== '') {
+        this.value = min;
+      }
+      updateKolMinusButtonState(this);
+    });
+  });
+}
+
+function updateKolMinusButtonState(input) {
+  const stepper = input.closest('.kol-stepper');
+  if (!stepper) return;
+  
+  const minusBtn = stepper.querySelector('.stepper-minus');
+  if (minusBtn) {
+    const currentValue = parseInt(input.value) || 0;
+    const min = parseInt(input.min) || 1;
+    minusBtn.disabled = currentValue <= min;
+  }
+}
+
+function setupDeliverableSteppers() {
+  const containers = document.querySelectorAll('.deliverables-grid');
+  containers.forEach(container => {
+    container.addEventListener('click', function(e) {
+      const btn = e.target.closest('.stepper-btn');
+      if (!btn) return;
+      
+      const targetId = btn.dataset.target;
+      const input = document.getElementById(targetId);
+      if (!input) return;
+      
+      const currentValue = parseInt(input.value) || 0;
+      const min = parseInt(input.min) || 0;
+      
+      if (btn.classList.contains('stepper-plus')) {
+        input.value = currentValue + 1;
+      } else if (btn.classList.contains('stepper-minus')) {
+        input.value = Math.max(min, currentValue - 1);
+      }
+      
+      // Trigger change event for listeners
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+      
+      // Update minus button disabled state
+      updateMinusButtonState(input);
+    });
+  });
+  
+  // Setup input change listeners for direct typing
+  document.querySelectorAll('.deliverable-stepper input[type="number"]').forEach(input => {
+    input.addEventListener('change', function() {
+      const min = parseInt(this.min) || 0;
+      if (parseInt(this.value) < min || isNaN(parseInt(this.value))) {
+        this.value = min;
+      }
+      updateMinusButtonState(this);
+    });
+    
+    // Initialize minus button state
+    updateMinusButtonState(input);
+  });
+}
+
+function updateMinusButtonState(input) {
+  const stepper = input.closest('.deliverable-stepper');
+  if (!stepper) return;
+  
+  const minusBtn = stepper.querySelector('.stepper-minus');
+  if (minusBtn) {
+    const currentValue = parseInt(input.value) || 0;
+    const min = parseInt(input.min) || 0;
+    minusBtn.disabled = currentValue <= min;
+  }
+}
+
+/* ============================================
+   INPUT VALIDATION - LETTERS & NUMBERS
+   ============================================ */
+
+/**
+ * Sets up real-time input validation for specific fields
+ */
+function setupInputValidation() {
+  // Name field - letters, spaces, and common name characters only
+  const nameField = document.getElementById('requestorName');
+  if (nameField) {
+    nameField.addEventListener('input', function(e) {
+      const originalValue = this.value;
+      // Allow letters, spaces, hyphens, apostrophes, and periods (for names like "Dr. John O'Connor-Smith")
+      const cleanedValue = originalValue.replace(/[^a-zA-ZÀ-ÿ\s\-'.]/g, '');
+      if (originalValue !== cleanedValue) {
+        this.value = cleanedValue;
+        showToast('warning', 'Invalid Character', 'Name can only contain letters, spaces, hyphens, and apostrophes.', 3000);
+      }
+    });
+  }
+
+  // Email field - format validation
+  const emailField = document.getElementById('requestorEmail');
+  if (emailField) {
+    // Email regex pattern for standard format validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    
+    // Validate on blur (when user leaves the field)
+    emailField.addEventListener('blur', function(e) {
+      const value = this.value.trim();
+      if (value && !emailRegex.test(value)) {
+        this.classList.add('input-invalid');
+        this.classList.remove('input-valid');
+        showToast('error', 'Invalid Email Format', 'Please enter a valid email address (e.g., name@domain.com).', 4000);
+      } else if (value && emailRegex.test(value)) {
+        this.classList.remove('input-invalid');
+        this.classList.add('input-valid');
+      } else {
+        this.classList.remove('input-invalid', 'input-valid');
+      }
+    });
+    
+    // Clear invalid state when user starts typing again
+    emailField.addEventListener('input', function(e) {
+      if (this.classList.contains('input-invalid')) {
+        this.classList.remove('input-invalid');
+      }
+      // Real-time validation for valid state
+      const value = this.value.trim();
+      if (value && emailRegex.test(value)) {
+        this.classList.add('input-valid');
+      } else {
+        this.classList.remove('input-valid');
+      }
+    });
+    
+    // Validate on paste
+    emailField.addEventListener('paste', function(e) {
+      setTimeout(() => {
+        const value = this.value.trim();
+        if (value && !emailRegex.test(value)) {
+          this.classList.add('input-invalid');
+          this.classList.remove('input-valid');
+          showToast('error', 'Invalid Email Format', 'Please enter a valid email address (e.g., name@domain.com).', 4000);
+        } else if (value && emailRegex.test(value)) {
+          this.classList.remove('input-invalid');
+          this.classList.add('input-valid');
+        }
+      }, 0);
+    });
+  }
+
+  // Number of KOLs fields - numbers only
+  const kolNumberFields = [
+    'numberOfKOLsEditorial',
+    'numberOfKOLsMedia',
+    'numberOfKOLsPaid',
+    'numberOfKOLsOthers'
+  ];
+
+  kolNumberFields.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.addEventListener('input', function(e) {
+        const originalValue = this.value;
+        // Allow only digits
+        const cleanedValue = originalValue.replace(/[^0-9]/g, '');
+        if (originalValue !== cleanedValue) {
+          this.value = cleanedValue;
+          showToast('warning', 'Invalid Character', 'Number of KOLs must contain only numbers.', 3000);
+        }
+      });
+      
+      // Also validate on paste
+      field.addEventListener('paste', function(e) {
+        setTimeout(() => {
+          const originalValue = this.value;
+          const cleanedValue = originalValue.replace(/[^0-9]/g, '');
+          if (originalValue !== cleanedValue) {
+            this.value = cleanedValue;
+            showToast('warning', 'Invalid Character', 'Number of KOLs must contain only numbers.', 3000);
+          }
+        }, 0);
+      });
+    }
+  });
+}
+
+/* ============================================
+   TOAST NOTIFICATION SYSTEM
+   ============================================ */
+
+/**
+ * Shows a toast notification
+ * @param {string} type - Type of toast: 'success', 'error', 'warning', 'info'
+ * @param {string} title - Toast title
+ * @param {string} message - Toast message
+ * @param {number} duration - Duration in ms (default: 5000, use 0 for no auto-dismiss)
+ */
+function showToast(type, title, message, duration = 5000) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.setAttribute('role', 'alert');
+  
+  // Icon SVGs for different types
+  const icons = {
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+    error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>',
+    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
+  };
+  
+  toast.innerHTML = `
+    <div class="toast-icon">
+      ${icons[type] || icons.info}
+    </div>
+    <div class="toast-content">
+      <div class="toast-title">${escapeHtml(title)}</div>
+      <div class="toast-message">${escapeHtml(message)}</div>
+    </div>
+    <button class="toast-close" aria-label="Dismiss notification">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    ${duration > 0 ? '<div class="toast-progress"><div class="toast-progress-bar" style="width: 100%"></div></div>' : ''}
+  `;
+  
+  container.appendChild(toast);
+  
+  // Close button handler
+  const closeBtn = toast.querySelector('.toast-close');
+  closeBtn.addEventListener('click', () => dismissToast(toast));
+  
+  // Trigger animation
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+  
+  // Auto-dismiss with progress bar
+  if (duration > 0) {
+    const progressBar = toast.querySelector('.toast-progress-bar');
+    if (progressBar) {
+      progressBar.style.transition = `width ${duration}ms linear`;
+      requestAnimationFrame(() => {
+        progressBar.style.width = '0%';
+      });
+    }
+    
+    setTimeout(() => {
+      dismissToast(toast);
+    }, duration);
+  }
+  
+  return toast;
+}
+
+/**
+ * Dismisses a toast notification
+ * @param {HTMLElement} toast - The toast element to dismiss
+ */
+function dismissToast(toast) {
+  if (!toast || toast.classList.contains('hide')) return;
+  
+  toast.classList.remove('show');
+  toast.classList.add('hide');
+  
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.parentNode.removeChild(toast);
+    }
+  }, 300);
+}
+
+/**
+ * Escapes HTML to prevent XSS
+ * @param {string} text - Text to escape
+ * @returns {string} Escaped text
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Format 24-hour time to 12-hour format with AM/PM
+function formatTimeTo12Hour(time24) {
+  if (!time24) return '';
+  const [hours, minutes] = time24.split(':');
+  const hour = parseInt(hours, 10);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minutes} ${ampm}`;
+}
+
+// Convert 12-hour time to 24-hour format for storage
+function convertTo24Hour(hour, minute, period) {
+  let h = parseInt(hour, 10);
+  if (period === 'PM' && h !== 12) {
+    h += 12;
+  } else if (period === 'AM' && h === 12) {
+    h = 0;
+  }
+  return `${h.toString().padStart(2, '0')}:${minute}`;
+}
+
+// Time picker state
+let timePickerState = {
+  start: { hour: 9, minute: 0, period: 'AM' },
+  end: { hour: 5, minute: 0, period: 'PM' }
+};
+
+// Flag to prevent close-on-scroll during opening animation
+let timePickerOpening = false;
+
+// Initialize scrollable time pickers
+function setupTimePickerSync() {
+  ['start', 'end'].forEach(type => {
+    const hourScroll = document.getElementById(type + 'HourScroll');
+    const minuteScroll = document.getElementById(type + 'MinuteScroll');
+    const periodScroll = document.getElementById(type + 'PeriodScroll');
+    
+    if (!hourScroll || !minuteScroll || !periodScroll) return;
+    
+    // Clear existing options to prevent duplicates
+    hourScroll.innerHTML = '';
+    minuteScroll.innerHTML = '';
+    periodScroll.innerHTML = '';
+    
+    // Populate hours (1-12)
+    for (let i = 1; i <= 12; i++) {
+      const div = document.createElement('div');
+      div.className = 'time-option';
+      div.textContent = i;
+      div.dataset.value = i;
+      div.onclick = () => selectTimeOption(hourScroll, div);
+      hourScroll.appendChild(div);
+    }
+    
+    // Populate minutes (00-55 by 5)
+    for (let i = 0; i < 60; i += 5) {
+      const div = document.createElement('div');
+      div.className = 'time-option';
+      div.textContent = i.toString().padStart(2, '0');
+      div.dataset.value = i;
+      div.onclick = () => selectTimeOption(minuteScroll, div);
+      minuteScroll.appendChild(div);
+    }
+    
+    // Populate AM/PM
+    ['AM', 'PM'].forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'time-option';
+      div.textContent = p;
+      div.dataset.value = p;
+      div.onclick = () => selectTimeOption(periodScroll, div);
+      periodScroll.appendChild(div);
+    });
+    
+    // Setup scroll listeners
+    [hourScroll, minuteScroll, periodScroll].forEach(scroll => {
+      let scrollTimeout;
+      scroll.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => snapToOption(scroll), 80);
+      });
+    });
+    
+    // Setup trigger click - clicking anywhere on the trigger opens the picker
+    const trigger = document.getElementById(type + 'TimeTrigger');
+    const displayInput = document.getElementById(type + 'TimeDisplay');
+    
+    if (trigger) {
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openTimePicker(type);
+      });
+    }
+    
+    // Setup input field for keyboard entry with format masking
+    if (displayInput) {
+      // Track if backspace was pressed
+      let isDeleting = false;
+      
+      // Prevent click from bubbling (trigger handles opening)
+      displayInput.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openTimePicker(type);
+      });
+      
+      // Track backspace/delete keys
+      displayInput.addEventListener('keydown', (e) => {
+        isDeleting = (e.key === 'Backspace' || e.key === 'Delete');
+        
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          parseTypedTime(type, displayInput.value);
+          displayInput.blur();
+        }
+      });
+      
+      // Format mask on input - enforce HH:MM AM/PM format
+      displayInput.addEventListener('input', (e) => {
+        formatTimeInput(displayInput, isDeleting);
+        isDeleting = false;
+      });
+      
+      // Parse typed time on blur
+      displayInput.addEventListener('blur', () => {
+        parseTypedTime(type, displayInput.value);
+      });
+    }
+  });
+  
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.time-input-wrapper')) {
+      closeTimePicker('start');
+      closeTimePicker('end');
+    }
+  });
+  
+  // Close on page scroll to prevent detachment (but not on time picker scroll or during opening)
+  let scrollableParent = document.querySelector('.container') || document.documentElement;
+  const closeOnScroll = (e) => {
+    // Don't close if currently opening the picker (scroll-into-view animation)
+    if (timePickerOpening) {
+      return;
+    }
+    // Don't close if scrolling inside the time picker
+    if (e.target.closest && e.target.closest('.time-picker-dropdown')) {
+      return;
+    }
+    closeTimePicker('start');
+    closeTimePicker('end');
+  };
+  
+  // Listen on multiple scrollable elements
+  window.addEventListener('scroll', closeOnScroll);
+  document.addEventListener('scroll', closeOnScroll, true);
+}
+
+function selectTimeOption(scrollContainer, option) {
+  const options = scrollContainer.querySelectorAll('.time-option');
+  const index = Array.from(options).indexOf(option);
+  scrollContainer.scrollTo({
+    top: index * 36,
+    behavior: 'smooth'
+  });
+}
+
+function snapToOption(scrollContainer) {
+  const scrollTop = scrollContainer.scrollTop;
+  const index = Math.round(scrollTop / 36);
+  const options = scrollContainer.querySelectorAll('.time-option');
+  
+  // Update selected state
+  options.forEach((opt, i) => {
+    opt.classList.toggle('selected', i === index);
+  });
+  
+  // Snap to position
+  scrollContainer.scrollTo({
+    top: index * 36,
+    behavior: 'smooth'
+  });
+}
+
+function openTimePicker(type) {
+  // Close other picker
+  const otherType = type === 'start' ? 'end' : 'start';
+  closeTimePicker(otherType);
+  
+  const dropdown = document.getElementById(type + 'TimeDropdown');
+  const trigger = document.getElementById(type + 'TimeTrigger');
+  const wrapper = document.getElementById(type + 'TimeWrapper');
+  
+  if (!dropdown || !trigger) return;
+  
+  // Set flag to prevent close-on-scroll during opening
+  timePickerOpening = true;
+  
+  // First, scroll the time input wrapper into view to ensure it's visible
+  if (wrapper) {
+    scrollElementIntoView(wrapper, { delay: 0, block: 'center' });
+  }
+  
+  // Wait for scroll to complete, then position and show dropdown
+  setTimeout(() => {
+    // Position dropdown using fixed positioning
+    const rect = trigger.getBoundingClientRect();
+    const dropdownHeight = 320; // Approximate dropdown height
+    const dropdownWidth = 220;
+    
+    // Check if dropdown would go off bottom of screen
+    if (rect.bottom + dropdownHeight > window.innerHeight) {
+      // Position above the trigger instead
+      dropdown.style.top = (rect.top - dropdownHeight - 4) + 'px';
+    } else {
+      dropdown.style.top = (rect.bottom + 4) + 'px';
+    }
+    
+    dropdown.style.left = rect.left + 'px';
+    
+    // Adjust if dropdown would go off-screen horizontally
+    if (rect.left + dropdownWidth > window.innerWidth) {
+      dropdown.style.left = (window.innerWidth - dropdownWidth - 10) + 'px';
+    }
+    
+    dropdown.classList.add('active');
+    trigger.classList.add('active');
+    
+    // Scroll to current values
+    const state = timePickerState[type];
+    setTimeout(() => {
+      scrollToValue(type + 'HourScroll', state.hour);
+      scrollToValue(type + 'MinuteScroll', state.minute);
+      scrollToValue(type + 'PeriodScroll', state.period);
+      
+      // Reset the opening flag after animation completes
+      timePickerOpening = false;
+    }, 100);
+  }, 200);
+}
+
+function closeTimePicker(type) {
+  const dropdown = document.getElementById(type + 'TimeDropdown');
+  const trigger = document.getElementById(type + 'TimeTrigger');
+  if (dropdown) dropdown.classList.remove('active');
+  if (trigger) trigger.classList.remove('active');
+}
+
+function confirmTimePicker(type) {
+  const hourScroll = document.getElementById(type + 'HourScroll');
+  const minuteScroll = document.getElementById(type + 'MinuteScroll');
+  const periodScroll = document.getElementById(type + 'PeriodScroll');
+  
+  const hour = getScrollSelectedValue(hourScroll);
+  const minute = getScrollSelectedValue(minuteScroll);
+  const period = getScrollSelectedValue(periodScroll);
+  
+  if (hour && minute !== null && period) {
+    timePickerState[type] = { hour: parseInt(hour), minute: parseInt(minute), period };
+    
+    // Update display (now an input field)
+    const display = document.getElementById(type + 'TimeDisplay');
+    if (display) {
+      display.value = `${hour}:${minute.toString().padStart(2, '0')} ${period}`;
+    }
+    
+    // Update hidden fields
+    updateTimeHiddenFields();
+  }
+  
+  closeTimePicker(type);
+}
+
+// Format time input as user types - enforces HH:MM AM/PM format
+function formatTimeInput(input, isDeleting = false) {
+  let value = input.value.toUpperCase();
+  
+  // If deleting, just clean invalid characters but don't auto-format aggressively
+  if (isDeleting) {
+    // Only remove truly invalid characters, keep the structure
+    let cleaned = value.replace(/[^0-9:AMP\s]/g, '');
+    if (cleaned !== value) {
+      input.value = cleaned;
+    }
+    return;
+  }
+  
+  // Extract only digits and letters (A, M, P)
+  let digits = value.replace(/[^0-9]/g, '');
+  let hasA = value.includes('A');
+  let hasP = value.includes('P');
+  
+  // Limit digits to 4 (HHMM)
+  digits = digits.substring(0, 4);
+  
+  // Build formatted string based on number of digits
+  let formatted = '';
+  
+  if (digits.length === 0) {
+    formatted = '';
+  } else if (digits.length === 1) {
+    // Single digit - could be start of hour
+    let d = parseInt(digits[0]);
+    if (d >= 2 && d <= 9) {
+      // Hours 2-9 are complete, add colon
+      formatted = digits[0] + ':';
+    } else {
+      // 0 or 1, need second digit
+      formatted = digits[0];
+    }
+  } else if (digits.length === 2) {
+    // Two digits - this is the hour
+    let hour = parseInt(digits);
+    if (hour === 0) {
+      formatted = '01:';
+    } else if (hour > 12) {
+      formatted = '12:';
+    } else {
+      formatted = digits + ':';
+    }
+  } else if (digits.length === 3) {
+    // Three digits - hour + first minute digit
+    let hourPart = digits.substring(0, 2);
+    let hour = parseInt(hourPart);
+    let m1 = digits[2];
+    
+    // Validate hour
+    if (hour === 0) hourPart = '01';
+    else if (hour > 12) hourPart = '12';
+    
+    // Validate first minute digit (0-5)
+    if (parseInt(m1) > 5) m1 = '5';
+    
+    formatted = hourPart + ':' + m1;
+  } else if (digits.length >= 4) {
+    // Four digits - complete time
+    let hourPart = digits.substring(0, 2);
+    let hour = parseInt(hourPart);
+    let minPart = digits.substring(2, 4);
+    let min = parseInt(minPart);
+    
+    // Validate hour
+    if (hour === 0) hourPart = '01';
+    else if (hour > 12) hourPart = '12';
+    
+    // Validate minutes (00-59)
+    if (min > 59) minPart = '59';
+    
+    formatted = hourPart + ':' + minPart;
+  }
+  
+  // Add AM/PM if we have complete time (HH:MM)
+  if (formatted.length === 5 && (hasA || hasP)) {
+    formatted += hasP ? ' PM' : ' AM';
+  }
+  
+  // Update input value
+  input.value = formatted;
+}
+
+// Parse time typed by user (e.g., "9:30 AM", "930am", "9:30am", "930 am")
+function parseTypedTime(type, value) {
+  if (!value || value === '--:-- --') return;
+  
+  // Clean up the input
+  let cleanValue = value.trim().toUpperCase();
+  
+  // Extract AM/PM
+  let period = 'AM';
+  if (cleanValue.includes('PM') || cleanValue.includes('P')) {
+    period = 'PM';
+  }
+  cleanValue = cleanValue.replace(/[AP]M?/gi, '').trim();
+  
+  // Try to parse hour and minute
+  let hour, minute;
+  
+  // Format: "9:30" or "09:30"
+  if (cleanValue.includes(':')) {
+    const parts = cleanValue.split(':');
+    hour = parseInt(parts[0]);
+    minute = parseInt(parts[1]) || 0;
+  } 
+  // Format: "930" or "0930"
+  else if (cleanValue.length >= 3) {
+    if (cleanValue.length === 3) {
+      hour = parseInt(cleanValue[0]);
+      minute = parseInt(cleanValue.substring(1));
+    } else {
+      hour = parseInt(cleanValue.substring(0, 2));
+      minute = parseInt(cleanValue.substring(2));
+    }
+  }
+  // Format: "9" (just hour)
+  else if (cleanValue.length > 0) {
+    hour = parseInt(cleanValue);
+    minute = 0;
+  }
+  
+  // Validate
+  if (isNaN(hour) || hour < 1 || hour > 12) {
+    // Reset to previous value or default
+    const display = document.getElementById(type + 'TimeDisplay');
+    const state = timePickerState[type];
+    if (display && state.hour) {
+      display.value = `${state.hour}:${state.minute.toString().padStart(2, '0')} ${state.period}`;
+    }
+    return;
+  }
+  
+  // Round minute to nearest 5
+  minute = Math.round(minute / 5) * 5;
+  if (minute >= 60) minute = 55;
+  if (minute < 0) minute = 0;
+  
+  // Update state
+  timePickerState[type] = { hour, minute, period };
+  
+  // Update display
+  const display = document.getElementById(type + 'TimeDisplay');
+  if (display) {
+    display.value = `${hour}:${minute.toString().padStart(2, '0')} ${period}`;
+  }
+  
+  // Update hidden fields
+  updateTimeHiddenFields();
+}
+
+function scrollToValue(scrollId, value) {
+  const scroll = document.getElementById(scrollId);
+  if (!scroll) return;
+  
+  const options = scroll.querySelectorAll('.time-option');
+  options.forEach((opt, index) => {
+    if (opt.dataset.value == value) {
+      scroll.scrollTop = index * 36;
+      opt.classList.add('selected');
+    } else {
+      opt.classList.remove('selected');
+    }
+  });
+}
+
+function getScrollSelectedValue(scrollContainer) {
+  if (!scrollContainer) return null;
+  const index = Math.round(scrollContainer.scrollTop / 36);
+  const options = scrollContainer.querySelectorAll('.time-option');
+  return options[index]?.dataset.value || null;
+}
+
+function updateTimeHiddenFields() {
+  const start = timePickerState.start;
+  const end = timePickerState.end;
+  
+  const hiddenStartField = document.getElementById('eventTimeStart');
+  const hiddenEndField = document.getElementById('eventTimeEnd');
+  const hiddenTimeField = document.getElementById('eventTime');
+  
+  if (hiddenStartField && start.hour) {
+    hiddenStartField.value = convertTo24Hour(start.hour.toString(), start.minute.toString().padStart(2, '0'), start.period);
+  }
+  if (hiddenEndField && end.hour) {
+    hiddenEndField.value = convertTo24Hour(end.hour.toString(), end.minute.toString().padStart(2, '0'), end.period);
+  }
+  if (hiddenTimeField) {
+    hiddenTimeField.value = getFormattedTimeRange();
+  }
+}
+
+function getFormattedTimeRange() {
+  const start = timePickerState.start;
+  const end = timePickerState.end;
+  
+  const startStr = `${start.hour}:${start.minute.toString().padStart(2, '0')} ${start.period}`;
+  const endStr = `${end.hour}:${end.minute.toString().padStart(2, '0')} ${end.period}`;
+  
+  return `${startStr} - ${endStr}`;
+}
+
+function setupNavigation() {
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const submitBtn = document.getElementById('submitBtn');
+  const form = document.getElementById('kolForm');
+
+  prevBtn.addEventListener('click', () => {
+    if (currentStep > 1) {
+      let prevStep = currentStep - 1;
+      
+      // Skip step 3 (deliverables) if "Others" is selected as request type
+      const typeOfRequest = document.getElementById('typeOfRequest').value;
+      if (prevStep === 3 && typeOfRequest === 'Others') {
+        prevStep = 2;
+      }
+      
+      currentStep = prevStep;
+      showStep(currentStep);
+    }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    if (validateStep(currentStep)) {
+      if (currentStep < totalSteps) {
+        let nextStep = currentStep + 1;
+        
+        // Skip step 3 (deliverables) if "Others" is selected as request type
+        // Go directly from step 2 to step 4
+        const typeOfRequest = document.getElementById('typeOfRequest').value;
+        if (nextStep === 3 && typeOfRequest === 'Others') {
+          nextStep = 4;
+        }
+        
+        currentStep = nextStep;
+        showStep(currentStep);
+      }
+    }
+  });
+
+  submitBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    showConfirmationDialog();
+  });
+
+  // Prevent form submission on Enter key
+  form.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+    }
+  });
+}
+
+function setupTypeOfRequestListener() {
+  const typeSelect = document.getElementById('typeOfRequest');
+  typeSelect.addEventListener('change', function() {
+    const selectedType = this.value;
+    
+    // Handle Others option
+    const otherGroup = document.getElementById('typeOfRequestOtherGroup');
+    const otherInput = document.getElementById('typeOfRequestOther');
+    if (selectedType === 'Others') {
+      otherGroup.style.display = 'block';
+      otherInput.setAttribute('required', 'required');
+    } else {
+      otherGroup.style.display = 'none';
+      otherInput.removeAttribute('required');
+      otherInput.value = '';
+    }
+    
+    // Update Step 2 title based on type
+    const step2Title = document.getElementById('step2Title');
+    if (step2Title) {
+      if (selectedType === 'Editorial Participation') {
+        step2Title.textContent = 'Requirements for Editorial Participation';
+      } else if (selectedType === 'Media Partnership') {
+        step2Title.textContent = 'Requirements for Media Partnership';
+      } else if (selectedType === 'Paid Partnership') {
+        step2Title.textContent = 'Requirements for Paid Partnership';
+      } else if (selectedType === 'Others') {
+        step2Title.textContent = 'Additional Information';
+      } else {
+        step2Title.textContent = 'Request Details';
+      }
+    }
+    
+    // Clear all Step 2 dynamic fields when type changes
+    clearAllDynamicFields();
+    
+    // Clear all Step 3 deliverables and conditional sections
+    clearAllDeliverables();
+    
+    // Populate deliverables for Step 3 based on type
+    populateDeliverables(selectedType);
+    
+    // Hide all dynamic fields
+    document.querySelectorAll('.dynamic-fields').forEach(field => {
+      field.classList.remove('active');
+      // Clear required attributes
+      field.querySelectorAll('input, select, textarea').forEach(input => {
+        input.removeAttribute('required');
+      });
+    });
+
+    // Show relevant fields based on selection
+    if (selectedType === 'Editorial Participation') {
+      const editorialFields = document.getElementById('editorialFields');
+      editorialFields.classList.add('active');
+      document.getElementById('numberOfKOLsEditorial').setAttribute('required', 'required');
+      document.getElementById('kolDescriptionEditorial').setAttribute('required', 'required');
+      setupEditorialTypeListener();
+    } else if (selectedType === 'Media Partnership') {
+      const mediaFields = document.getElementById('mediaFields');
+      mediaFields.classList.add('active');
+      document.getElementById('numberOfKOLsMedia').setAttribute('required', 'required');
+      document.getElementById('kolDescriptionMedia').setAttribute('required', 'required');
+    } else if (selectedType === 'Paid Partnership') {
+      const paidFields = document.getElementById('paidFields');
+      paidFields.classList.add('active');
+      document.getElementById('pitchGo').setAttribute('required', 'required');
+      document.getElementById('numberOfKOLsPaid').setAttribute('required', 'required');
+      document.getElementById('kolDescriptionPaid').setAttribute('required', 'required');
+      setupPaidTypeListener();
+    } else if (selectedType === 'Others') {
+      const othersFields = document.getElementById('othersFields');
+      othersFields.classList.add('active');
+      document.getElementById('numberOfKOLsOthers').setAttribute('required', 'required');
+      document.getElementById('kolDescriptionOthers').setAttribute('required', 'required');
+    }
+  });
+}
+
+// Clear all dynamic fields in Step 2 when type changes
+function clearAllDynamicFields() {
+  // Clear Editorial fields
+  const editorialCheckboxes = document.querySelectorAll('input[name="editorialType"]');
+  editorialCheckboxes.forEach(cb => cb.checked = false);
+  const detailedInclusionsCheckboxes = document.querySelectorAll('input[name="detailedInclusions"]');
+  detailedInclusionsCheckboxes.forEach(cb => cb.checked = false);
+  const otherInclusion = document.getElementById('otherInclusion');
+  if (otherInclusion) otherInclusion.value = '';
+  const otherInclusionGroup = document.getElementById('otherInclusionGroup');
+  if (otherInclusionGroup) otherInclusionGroup.classList.remove('active');
+  const numberOfKOLsEditorial = document.getElementById('numberOfKOLsEditorial');
+  if (numberOfKOLsEditorial) numberOfKOLsEditorial.value = '';
+  const kolDescriptionEditorial = document.getElementById('kolDescriptionEditorial');
+  if (kolDescriptionEditorial) kolDescriptionEditorial.value = '';
+  
+  // Clear Media Partnership fields
+  const kolAmbassadorTypeCheckboxes = document.querySelectorAll('input[name="kolAmbassadorType"]');
+  kolAmbassadorTypeCheckboxes.forEach(cb => cb.checked = false);
+  const numberOfKOLsMedia = document.getElementById('numberOfKOLsMedia');
+  if (numberOfKOLsMedia) numberOfKOLsMedia.value = '';
+  const kolDescriptionMedia = document.getElementById('kolDescriptionMedia');
+  if (kolDescriptionMedia) kolDescriptionMedia.value = '';
+  
+  // Clear Paid Partnership fields
+  const pitchGo = document.getElementById('pitchGo');
+  if (pitchGo) pitchGo.value = '';
+  const paidTypeCheckboxes = document.querySelectorAll('input[name="paidType"]');
+  paidTypeCheckboxes.forEach(cb => cb.checked = false);
+  const paidDetailedInclusionsCheckboxes = document.querySelectorAll('input[name="paidDetailedInclusions"]');
+  paidDetailedInclusionsCheckboxes.forEach(cb => cb.checked = false);
+  const paidOtherInclusion = document.getElementById('paidOtherInclusion');
+  if (paidOtherInclusion) paidOtherInclusion.value = '';
+  const paidInclusionsPreview = document.getElementById('paidInclusionsPreview');
+  if (paidInclusionsPreview) paidInclusionsPreview.style.display = 'none';
+  const paidOtherInclusionGroup = document.getElementById('paidOtherInclusionGroup');
+  if (paidOtherInclusionGroup) paidOtherInclusionGroup.style.display = 'none';
+  const numberOfKOLsPaid = document.getElementById('numberOfKOLsPaid');
+  if (numberOfKOLsPaid) numberOfKOLsPaid.value = '';
+  const kolDescriptionPaid = document.getElementById('kolDescriptionPaid');
+  if (kolDescriptionPaid) kolDescriptionPaid.value = '';
+  
+  // Clear Others fields
+  const numberOfKOLsOthers = document.getElementById('numberOfKOLsOthers');
+  if (numberOfKOLsOthers) numberOfKOLsOthers.value = '';
+  const kolDescriptionOthers = document.getElementById('kolDescriptionOthers');
+  if (kolDescriptionOthers) kolDescriptionOthers.value = '';
+}
+
+// Clear all Step 3 deliverables and conditional sections
+function clearAllDeliverables() {
+  // Reset all deliverable quantity inputs to 0 (social)
+  const deliverableQtyInputs = document.querySelectorAll('input[name="deliverable_qty"]');
+  deliverableQtyInputs.forEach(input => {
+    input.value = 0;
+    updateMinusButtonState(input);
+  });
+  
+  // Clear all deliverable checkboxes (event/talent)
+  const deliverableCheckboxes = document.querySelectorAll('input[name="deliverables"]');
+  deliverableCheckboxes.forEach(cb => cb.checked = false);
+  
+  // Clear other deliverable
+  const otherDeliverableCheck = document.getElementById('otherDeliverableCheck');
+  if (otherDeliverableCheck) otherDeliverableCheck.checked = false;
+  const otherDeliverable = document.getElementById('otherDeliverable');
+  if (otherDeliverable) otherDeliverable.value = '';
+  const otherDeliverableGroup = document.getElementById('otherDeliverableGroup');
+  if (otherDeliverableGroup) otherDeliverableGroup.classList.remove('active');
+  
+  // Clear posting requirements
+  const targetLiveDate = document.getElementById('targetLiveDate');
+  if (targetLiveDate) targetLiveDate.value = '';
+  const mandatories = document.getElementById('mandatories');
+  if (mandatories) mandatories.value = '';
+  const references = document.getElementById('references');
+  if (references) references.value = '';
+  
+  // Clear event details
+  const eventActivityName = document.getElementById('eventActivityName');
+  if (eventActivityName) eventActivityName.value = '';
+  const eventDate = document.getElementById('eventDate');
+  if (eventDate) eventDate.value = '';
+  const eventTimeStart = document.getElementById('eventTimeStart');
+  if (eventTimeStart) eventTimeStart.value = '';
+  const eventTimeEnd = document.getElementById('eventTimeEnd');
+  if (eventTimeEnd) eventTimeEnd.value = '';
+  const eventTime = document.getElementById('eventTime');
+  if (eventTime) eventTime.value = '';
+  const eventVenueAddress = document.getElementById('eventVenueAddress');
+  if (eventVenueAddress) eventVenueAddress.value = '';
+  const eventNotes = document.getElementById('eventNotes');
+  if (eventNotes) eventNotes.value = '';
+  
+  // Reset time picker state and displays
+  timePickerState = {
+    start: { hour: 9, minute: 0, period: 'AM' },
+    end: { hour: 5, minute: 0, period: 'PM' }
+  };
+  const startTimeDisplay = document.getElementById('startTimeDisplay');
+  if (startTimeDisplay) startTimeDisplay.textContent = '--:-- --';
+  const endTimeDisplay = document.getElementById('endTimeDisplay');
+  if (endTimeDisplay) endTimeDisplay.textContent = '--:-- --';
+  
+  // Hide conditional sections
+  const postingRequirementsSection = document.getElementById('postingRequirementsSection');
+  if (postingRequirementsSection) postingRequirementsSection.classList.remove('active');
+  const eventDetailsSection = document.getElementById('eventDetailsSection');
+  if (eventDetailsSection) eventDetailsSection.classList.remove('active');
+  
+  // Reset cross-posting toggle
+  const crossPostingToggle = document.getElementById('crossPostingToggle');
+  if (crossPostingToggle) crossPostingToggle.checked = false;
+}
+
+// Deliverables configuration by type of request
+const deliverablesConfig = {
+  'Editorial Participation': {
+    postEngagement: [
+      { id: 'igCarousel', value: 'igCarousel', label: 'IG Carousel' },
+      { id: 'igReel', value: 'igReel', label: 'IG Reel' },
+      { id: 'igStories', value: 'igStories', label: 'IG Stories' },
+      { id: 'tiktokCarousel', value: 'tiktokCarousel', label: 'TikTok Carousel' },
+      { id: 'tiktokVideo', value: 'tiktokVideo', label: 'TikTok Video' }
+    ],
+    eventRequirements: [
+      { id: 'eventAttendance', value: 'eventAttendance', label: 'Event Attendance' },
+      { id: 'eventParticipation', value: 'eventParticipation', label: 'Event Participation' },
+      { id: 'eventSpeaker', value: 'eventSpeaker', label: 'Event Speaker' }
+    ],
+    talentRequirements: [
+      { id: 'photoshootTalent', value: 'photoshootTalent', label: 'Photoshoot Talent' },
+      { id: 'resourcePerson', value: 'resourcePerson', label: 'Resource Person / Article' },
+      { id: 'videoTalent', value: 'videoTalent', label: 'Video Talent' },
+      { id: 'voTalent', value: 'voTalent', label: 'Voice-Over Talent' }
+    ]
+  },
+  'Media Partnership': {
+    postEngagement: [
+      { id: 'igCarousel', value: 'igCarousel', label: 'IG Carousel' },
+      { id: 'igReel', value: 'igReel', label: 'IG Reel' },
+      { id: 'igStories', value: 'igStories', label: 'IG Stories' },
+      { id: 'tiktokCarousel', value: 'tiktokCarousel', label: 'TikTok Carousel' },
+      { id: 'tiktokVideo', value: 'tiktokVideo', label: 'TikTok Video' }
+    ],
+    eventRequirements: [
+      { id: 'eventAttendance', value: 'eventAttendance', label: 'Event Attendance' },
+      { id: 'eventHosting', value: 'eventHosting', label: 'Event Hosting' },
+      { id: 'eventSpeaker', value: 'eventSpeaker', label: 'Event Speaker' }
+    ],
+    talentRequirements: [
+      { id: 'photoshootTalent', value: 'photoshootTalent', label: 'Photoshoot Talent' },
+      { id: 'resourcePerson', value: 'resourcePerson', label: 'Resource Person / Article' },
+      { id: 'videoTalent', value: 'videoTalent', label: 'Video Talent' },
+      { id: 'voTalent', value: 'voTalent', label: 'Voice-Over Talent' }
+    ]
+  },
+  'Paid Partnership': {
+    postEngagement: [
+      { id: 'igCarousel', value: 'igCarousel', label: 'IG Carousel' },
+      { id: 'igReel', value: 'igReel', label: 'IG Reel' },
+      { id: 'igStories', value: 'igStories', label: 'IG Stories' },
+      { id: 'tiktokCarousel', value: 'tiktokCarousel', label: 'TikTok Carousel' },
+      { id: 'tiktokVideo', value: 'tiktokVideo', label: 'TikTok Video' }
+    ],
+    eventRequirements: [
+      { id: 'eventHosting', value: 'eventHosting', label: 'Event Hosting' },
+      { id: 'eventPerformer', value: 'eventPerformer', label: 'Event Performer' },
+      { id: 'eventSpeaker', value: 'eventSpeaker', label: 'Event Speaker' },
+      { id: 'eventAttendance', value: 'eventAttendance', label: 'Event Attendance' }
+    ],
+    talentRequirements: [
+      { id: 'photoshootTalent', value: 'photoshootTalent', label: 'Photoshoot Talent' },
+      { id: 'resourcePerson', value: 'resourcePerson', label: 'Resource Person / Article' },
+      { id: 'videoTalentHost', value: 'videoTalentHost', label: 'Video Talent - Host' },
+      { id: 'videoTalentModel', value: 'videoTalentModel', label: 'Video Talent - Model' },
+      { id: 'voTalent', value: 'voTalent', label: 'Voice-Over Talent' }
+    ]
+  }
+};
+
+function populateDeliverables(typeOfRequest) {
+  const config = deliverablesConfig[typeOfRequest];
+  
+  // Get container elements
+  const postEngagementContainer = document.getElementById('postEngagementCheckboxes');
+  const eventRequirementsContainer = document.getElementById('eventRequirementsCheckboxes');
+  const talentRequirementsContainer = document.getElementById('talentRequirementsCheckboxes');
+  
+  if (!config) {
+    // Clear all if no config (e.g., "Others" type)
+    if (postEngagementContainer) postEngagementContainer.innerHTML = '';
+    if (eventRequirementsContainer) eventRequirementsContainer.innerHTML = '';
+    if (talentRequirementsContainer) talentRequirementsContainer.innerHTML = '';
+    return;
+  }
+  
+  // Generate Post Engagement with quantity steppers
+  if (postEngagementContainer && config.postEngagement) {
+    const itemsHtml = config.postEngagement.map(item => `
+      <div class="deliverable-item" data-deliverable="${item.value}">
+        <span class="deliverable-label">${item.label}</span>
+        <div class="deliverable-stepper">
+          <button type="button" class="stepper-btn stepper-minus" data-target="qty_${item.id}" aria-label="Decrease">−</button>
+          <input type="number" id="qty_${item.id}" name="deliverable_qty" data-deliverable="${item.value}" data-category="social" min="0" value="0" aria-label="${item.label} quantity">
+          <button type="button" class="stepper-btn stepper-plus" data-target="qty_${item.id}" aria-label="Increase">+</button>
+        </div>
+      </div>
+    `).join('');
+    
+    postEngagementContainer.innerHTML = `<div class="deliverables-grid">${itemsHtml}</div>`;
+  }
+  
+  // Show cross-posting toggle in header for non-Others types
+  const crossPostingContainer = document.getElementById('crossPostingContainer');
+  if (crossPostingContainer) {
+    crossPostingContainer.style.display = typeOfRequest !== 'Others' ? 'flex' : 'none';
+  }
+  
+  // Generate Event Requirements checkboxes
+  if (eventRequirementsContainer && config.eventRequirements) {
+    eventRequirementsContainer.innerHTML = config.eventRequirements.map(item => `
+      <div class="checkbox-item">
+        <input type="checkbox" id="${item.id}" name="deliverables" value="${item.value}" data-category="event">
+        <label for="${item.id}">${item.label}</label>
+      </div>
+    `).join('');
+  }
+  
+  // Generate Talent Requirements checkboxes
+  if (talentRequirementsContainer && config.talentRequirements) {
+    talentRequirementsContainer.innerHTML = config.talentRequirements.map(item => `
+      <div class="checkbox-item">
+        <input type="checkbox" id="${item.id}" name="deliverables" value="${item.value}" data-category="talent">
+        <label for="${item.id}">${item.label}</label>
+      </div>
+    `).join('');
+  }
+  
+  // Setup deliverable stepper listeners
+  setupDeliverableSteppers();
+  
+  // Re-setup deliverables listeners after populating
+  setupDeliverablesListener();
+}
+
+function setupEditorialTypeListener() {
+  const editorialTypeCheckboxes = document.querySelectorAll('input[name="editorialType"]');
+  const inclusionsPreview = document.getElementById('editorialInclusionsPreview');
+  const inclusionsList = document.getElementById('inclusionsList');
+  const otherInclusionGroup = document.getElementById('otherInclusionGroup');
+  
+  // Detailed KOL Ambassadors - alphabetically sorted within each group
+  const packageInclusions = {
+    'Cosmo Vibe Tribe': ['Cosmo asks', 'Cosmo awards', 'Cosmo events', 'Cosmo goes to', 'Cosmo tries', 'Cosmo vibe check'],
+    'PEP Crew': ['PEP asks', 'PEP goes to', 'PEP live', 'PEP podcast'],
+    'Preview Clique': ['Preview asks', 'Preview events', 'Preview goes to'],
+    'SP Board of Experts': ['Citation', 'Isang tanong, isang sagot', 'Resource person / article', 'Speaker for event', 'SPV engagement'],
+    'SP Squad': ['SP awards', 'SP events', 'SP goes to', 'SP movie premiere', 'SP POV', 'SPV engagement'],
+    'Spot Circle': ['Spot 50 great', 'Spot events', 'Spot tries', 'Spot visits', 'Spotted']
+  };
+
+  function updateInclusionsPreview() {
+    const selectedTypes = Array.from(document.querySelectorAll('input[name="editorialType"]:checked'))
+      .map(cb => cb.value);
+    
+    if (selectedTypes.length > 0) {
+      // Show inclusions preview
+      inclusionsPreview.style.display = 'block';
+      
+      // Build combined inclusions list from all selected types with checkboxes
+      let allInclusions = [];
+      
+      // Sort selected types alphabetically
+      selectedTypes.sort().forEach(type => {
+        if (packageInclusions[type]) {
+          allInclusions.push(`<li class="inclusion-header">${type}:</li>`);
+          packageInclusions[type].forEach(item => {
+            const itemId = 'inclusion_' + item.replace(/[^a-zA-Z0-9]/g, '_');
+            allInclusions.push(`
+              <li class="inclusion-checkbox-item">
+                <input type="checkbox" id="${itemId}" name="detailedInclusions" value="${item}">
+                <label for="${itemId}">${item}</label>
+              </li>
+            `);
+          });
+        }
+      });
+      
+      // Add Others option at the end
+      allInclusions.push(`
+        <li class="inclusion-checkbox-item others-checkbox">
+          <input type="checkbox" id="inclusionOthers" name="detailedInclusions" value="Others">
+          <label for="inclusionOthers">Others</label>
+        </li>
+      `);
+      
+      inclusionsList.innerHTML = '<ul class="inclusions-list">' + allInclusions.join('') + '</ul>';
+      
+      // Add listener for Others checkbox
+      const othersCheckbox = document.getElementById('inclusionOthers');
+      if (othersCheckbox) {
+        othersCheckbox.addEventListener('change', function() {
+          const otherInclusionInput = document.getElementById('otherInclusion');
+          if (this.checked) {
+            otherInclusionGroup.style.display = 'block';
+            otherInclusionInput.setAttribute('required', 'required');
+          } else {
+            otherInclusionGroup.style.display = 'none';
+            otherInclusionInput.removeAttribute('required');
+            otherInclusionInput.value = '';
+          }
+        });
+      }
+      
+      // Hide other inclusion group by default (will show when Others is checked)
+      otherInclusionGroup.style.display = 'none';
+    } else {
+      inclusionsPreview.style.display = 'none';
+      otherInclusionGroup.style.display = 'none';
+      inclusionsList.innerHTML = '';
+    }
+  }
+
+  editorialTypeCheckboxes.forEach(cb => {
+    cb.addEventListener('change', updateInclusionsPreview);
+  });
+}
+
+function setupPaidTypeListener() {
+  const paidTypeCheckboxes = document.querySelectorAll('input[name="paidType"]');
+  const inclusionsPreview = document.getElementById('paidInclusionsPreview');
+  const inclusionsList = document.getElementById('paidInclusionsList');
+  const otherInclusionGroup = document.getElementById('paidOtherInclusionGroup');
+  
+  // Detailed KOL Ambassadors - same as Editorial Participation
+  const packageInclusions = {
+    'Cosmo Vibe Tribe': ['Cosmo asks', 'Cosmo awards', 'Cosmo events', 'Cosmo goes to', 'Cosmo tries', 'Cosmo vibe check'],
+    'PEP Crew': ['PEP asks', 'PEP goes to', 'PEP live', 'PEP podcast'],
+    'Preview Clique': ['Preview asks', 'Preview events', 'Preview goes to'],
+    'SP Board of Experts': ['Citation', 'Isang tanong, isang sagot', 'Resource person / article', 'Speaker for event', 'SPV engagement'],
+    'SP Squad': ['SP awards', 'SP events', 'SP goes to', 'SP movie premiere', 'SP POV', 'SPV engagement'],
+    'Spot Circle': ['Spot 50 great', 'Spot events', 'Spot tries', 'Spot visits', 'Spotted']
+  };
+
+  function updatePaidInclusionsPreview() {
+    const selectedTypes = Array.from(document.querySelectorAll('input[name="paidType"]:checked'))
+      .map(cb => cb.value);
+    
+    if (selectedTypes.length > 0) {
+      // Show inclusions preview
+      inclusionsPreview.style.display = 'block';
+      
+      // Build combined inclusions list from all selected types with checkboxes
+      let allInclusions = [];
+      
+      // Sort selected types alphabetically
+      selectedTypes.sort().forEach(type => {
+        if (packageInclusions[type]) {
+          allInclusions.push(`<li class="inclusion-header">${type}:</li>`);
+          packageInclusions[type].forEach(item => {
+            const itemId = 'paidInclusion_' + item.replace(/[^a-zA-Z0-9]/g, '_');
+            allInclusions.push(`
+              <li class="inclusion-checkbox-item">
+                <input type="checkbox" id="${itemId}" name="paidDetailedInclusions" value="${item}">
+                <label for="${itemId}">${item}</label>
+              </li>
+            `);
+          });
+        }
+      });
+      
+      // Add Others option at the end
+      allInclusions.push(`
+        <li class="inclusion-checkbox-item others-checkbox">
+          <input type="checkbox" id="paidInclusionOthers" name="paidDetailedInclusions" value="Others">
+          <label for="paidInclusionOthers">Others</label>
+        </li>
+      `);
+      
+      inclusionsList.innerHTML = '<ul class="inclusions-list">' + allInclusions.join('') + '</ul>';
+      
+      // Add listener for Others checkbox
+      const othersCheckbox = document.getElementById('paidInclusionOthers');
+      if (othersCheckbox) {
+        othersCheckbox.addEventListener('change', function() {
+          const otherInclusionInput = document.getElementById('paidOtherInclusion');
+          if (this.checked) {
+            otherInclusionGroup.style.display = 'block';
+            otherInclusionInput.setAttribute('required', 'required');
+          } else {
+            otherInclusionGroup.style.display = 'none';
+            otherInclusionInput.removeAttribute('required');
+            otherInclusionInput.value = '';
+          }
+        });
+      }
+      
+      // Hide other inclusion group by default (will show when Others is checked)
+      otherInclusionGroup.style.display = 'none';
+    } else {
+      inclusionsPreview.style.display = 'none';
+      otherInclusionGroup.style.display = 'none';
+      inclusionsList.innerHTML = '';
+    }
+  }
+
+  paidTypeCheckboxes.forEach(cb => {
+    cb.addEventListener('change', updatePaidInclusionsPreview);
+  });
+}
+
+function setupBusinessUnitListener() {
+  const businessUnitSelect = document.getElementById('businessUnit');
+  const otherGroup = document.getElementById('businessUnitOtherGroup');
+  const otherInput = document.getElementById('businessUnitOther');
+  
+  businessUnitSelect.addEventListener('change', function() {
+    if (this.value === 'Others') {
+      otherGroup.style.display = 'block';
+      otherInput.setAttribute('required', 'required');
+    } else {
+      otherGroup.style.display = 'none';
+      otherInput.removeAttribute('required');
+      otherInput.value = '';
+    }
+  });
+}
+
+function setupDeliverablesListener() {
+  const deliverableQtyInputs = document.querySelectorAll('input[name="deliverable_qty"]');
+  const deliverableCheckboxes = document.querySelectorAll('input[name="deliverables"]');
+  const otherDeliverableCheck = document.getElementById('otherDeliverableCheck');
+  const otherDeliverableGroup = document.getElementById('otherDeliverableGroup');
+  const postingSection = document.getElementById('postingRequirementsSection');
+  const eventSection = document.getElementById('eventDetailsSection');
+
+  function updateConditionalSections() {
+    // Check if any social deliverables have quantity > 0
+    let socialSelected = false;
+    
+    document.querySelectorAll('input[name="deliverable_qty"][data-category="social"]').forEach(input => {
+      const qty = parseInt(input.value) || 0;
+      if (qty > 0) socialSelected = true;
+    });
+    
+    // Check if any event OR talent checkboxes are checked
+    const eventSelected = document.querySelectorAll('input[name="deliverables"][data-category="event"]:checked').length > 0;
+    const talentSelected = document.querySelectorAll('input[name="deliverables"][data-category="talent"]:checked').length > 0;
+    
+    // Show/hide Posting Requirements section and manage required fields
+    if (socialSelected) {
+      postingSection.classList.add('active');
+      document.getElementById('targetLiveDate').setAttribute('required', 'required');
+      document.getElementById('mandatories').setAttribute('required', 'required');
+      // References (URL) is NOT required
+    } else {
+      postingSection.classList.remove('active');
+      document.getElementById('targetLiveDate').removeAttribute('required');
+      document.getElementById('mandatories').removeAttribute('required');
+    }
+    
+    // Show/hide Event Details section and manage required fields
+    if (eventSelected || talentSelected) {
+      eventSection.classList.add('active');
+      document.getElementById('eventActivityName').setAttribute('required', 'required');
+      document.getElementById('eventDate').setAttribute('required', 'required');
+      document.getElementById('eventTimeStart').setAttribute('required', 'required');
+      document.getElementById('eventTimeEnd').setAttribute('required', 'required');
+      document.getElementById('eventVenueAddress').setAttribute('required', 'required');
+      // Notes is NOT required
+      // Re-initialize time picker sync when event section becomes visible
+      setupTimePickerSync();
+    } else {
+      eventSection.classList.remove('active');
+      document.getElementById('eventActivityName').removeAttribute('required');
+      document.getElementById('eventDate').removeAttribute('required');
+      document.getElementById('eventTimeStart').removeAttribute('required');
+      document.getElementById('eventTimeEnd').removeAttribute('required');
+      document.getElementById('eventVenueAddress').removeAttribute('required');
+    }
+  }
+
+  // Listen to all deliverable quantity inputs
+  deliverableQtyInputs.forEach(input => {
+    input.addEventListener('change', updateConditionalSections);
+  });
+  
+  // Listen to all deliverable checkboxes (event/talent)
+  deliverableCheckboxes.forEach(cb => {
+    cb.addEventListener('change', updateConditionalSections);
+  });
+
+  // Handle "Others" checkbox
+  if (otherDeliverableCheck) {
+    otherDeliverableCheck.addEventListener('change', function() {
+      const otherDeliverableInput = document.getElementById('otherDeliverable');
+      if (this.checked) {
+        otherDeliverableGroup.classList.add('active');
+        otherDeliverableInput.setAttribute('required', 'required');
+      } else {
+        otherDeliverableGroup.classList.remove('active');
+        otherDeliverableInput.removeAttribute('required');
+        otherDeliverableInput.value = '';
+      }
+    });
+  }
+}
+
+function showStep(step) {
+  // Hide all steps
+  document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+  
+  // Show current step
+  document.getElementById('step' + step).classList.add('active');
+
+  // Check if "Others" is selected (step 3 should be skipped)
+  const typeOfRequest = document.getElementById('typeOfRequest').value;
+  const skipStep3 = typeOfRequest === 'Others';
+
+  // Update progress bar
+  document.querySelectorAll('.progress-step').forEach((s, index) => {
+    const stepNum = index + 1;
+    s.classList.remove('active', 'completed', 'skipped');
+    
+    if (stepNum < step) {
+      s.classList.add('completed');
+    } else if (stepNum === step) {
+      s.classList.add('active');
+    }
+    
+    // Mark step 3 as completed/skipped when on step 4 with "Others" selected
+    if (stepNum === 3 && skipStep3 && step === 4) {
+      s.classList.add('completed');
+    }
+  });
+
+  // Update navigation buttons
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const submitBtn = document.getElementById('submitBtn');
+
+  prevBtn.style.display = step === 1 ? 'none' : 'inline-block';
+  
+  if (step === totalSteps) {
+    nextBtn.style.display = 'none';
+    submitBtn.style.display = 'inline-block';
+    populateReview();
+  } else {
+    nextBtn.style.display = 'inline-block';
+    submitBtn.style.display = 'none';
+  }
+
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function validateStep(step) {
+  const currentStepElement = document.getElementById('step' + step);
+  const requiredFields = currentStepElement.querySelectorAll('[required]');
+  
+  let isValid = true;
+  let firstInvalidField = null;
+  let errorMessage = 'Please fill in all required fields.';
+  
+  requiredFields.forEach(field => {
+    if (!field.value.trim()) {
+      field.style.borderColor = '#e74c3c';
+      isValid = false;
+      if (!firstInvalidField) {
+        firstInvalidField = field;
+      }
+    } else {
+      field.style.borderColor = '#e0e0e0';
+    }
+  });
+
+  // Step 2 validation for Editorial Participation - check if at least one Detailed KOL Ambassador is selected
+  if (step === 2) {
+    const typeOfRequest = document.getElementById('typeOfRequest').value;
+    if (typeOfRequest === 'Editorial Participation') {
+      const editorialInclusionsPreview = document.getElementById('editorialInclusionsPreview');
+      // Only validate if the Detailed KOL Ambassadors section is visible (KOL Ambassadors selected)
+      if (editorialInclusionsPreview && editorialInclusionsPreview.style.display !== 'none') {
+        const selectedDetailedInclusions = document.querySelectorAll('input[name="detailedInclusions"]:checked');
+        if (selectedDetailedInclusions.length === 0) {
+          isValid = false;
+          errorMessage = 'Please select at least one Detailed KOL Ambassador.';
+          // Highlight the inclusions box
+          const inclusionsList = document.getElementById('inclusionsList');
+          if (inclusionsList) {
+            inclusionsList.style.border = '2px solid #e74c3c';
+            inclusionsList.style.borderRadius = '8px';
+          }
+        } else {
+          const inclusionsList = document.getElementById('inclusionsList');
+          if (inclusionsList) {
+            inclusionsList.style.border = '';
+          }
+        }
+      }
+    }
+    
+    // Step 2 validation for Paid Partnership - check if at least one Detailed KOL Ambassador is selected
+    if (typeOfRequest === 'Paid Partnership') {
+      const paidInclusionsPreview = document.getElementById('paidInclusionsPreview');
+      // Only validate if the Detailed KOL Ambassadors section is visible (KOL Ambassadors selected)
+      if (paidInclusionsPreview && paidInclusionsPreview.style.display !== 'none') {
+        const selectedPaidDetailedInclusions = document.querySelectorAll('input[name="paidDetailedInclusions"]:checked');
+        if (selectedPaidDetailedInclusions.length === 0) {
+          isValid = false;
+          errorMessage = 'Please select at least one Detailed KOL Ambassador.';
+          // Highlight the inclusions box
+          const paidInclusionsList = document.getElementById('paidInclusionsList');
+          if (paidInclusionsList) {
+            paidInclusionsList.style.border = '2px solid #e74c3c';
+            paidInclusionsList.style.borderRadius = '8px';
+          }
+        } else {
+          const paidInclusionsList = document.getElementById('paidInclusionsList');
+          if (paidInclusionsList) {
+            paidInclusionsList.style.border = '';
+          }
+        }
+      }
+    }
+  }
+
+  if (!isValid) {
+    showToast('warning', 'Validation Required', errorMessage);
+    if (firstInvalidField) {
+      firstInvalidField.focus();
+    }
+  }
+
+  return isValid;
+}
+
+// Reset all review sections to clean state before populating
+function resetReviewSections() {
+  // Clear basic info text
+  document.getElementById('review-requestorName').textContent = '';
+  document.getElementById('review-requestorEmail').textContent = '';
+  document.getElementById('review-businessUnit').textContent = '';
+  document.getElementById('review-teamBrand').textContent = '';
+  document.getElementById('review-typeOfRequest').textContent = '';
+  
+  // Clear and hide dynamic review sections
+  const detailsContent = document.getElementById('reviewDetailsContent');
+  if (detailsContent) detailsContent.innerHTML = '';
+  
+  const deliverablesContent = document.getElementById('reviewDeliverablesContent');
+  if (deliverablesContent) deliverablesContent.innerHTML = '';
+  
+  const postingContent = document.getElementById('reviewPostingContent');
+  if (postingContent) postingContent.innerHTML = '';
+  
+  const eventContent = document.getElementById('reviewEventContent');
+  if (eventContent) eventContent.innerHTML = '';
+  
+  // Hide all optional review sections
+  document.getElementById('reviewDeliverablesSection').style.display = 'none';
+  document.getElementById('reviewPostingSection').style.display = 'none';
+  document.getElementById('reviewEventSection').style.display = 'none';
+}
+
+function populateReview() {
+  // Reset all review sections first to avoid stale data
+  resetReviewSections();
+  
+  // Basic Information
+  document.getElementById('review-requestorName').textContent = 
+    document.getElementById('requestorName').value;
+  document.getElementById('review-requestorEmail').textContent = 
+    document.getElementById('requestorEmail').value;
+  
+  // Business Unit - handle Others
+  const businessUnitValue = document.getElementById('businessUnit').value;
+  const businessUnitDisplay = businessUnitValue === 'Others' 
+    ? document.getElementById('businessUnitOther').value 
+    : businessUnitValue;
+  document.getElementById('review-businessUnit').textContent = businessUnitDisplay;
+  
+  // Participating Brands
+  const selectedBrands = Array.from(document.querySelectorAll('input[name="participatingBrands"]:checked'))
+    .map(cb => cb.value).join(', ');
+  document.getElementById('review-teamBrand').textContent = selectedBrands || 'None selected';
+  
+  // Type of Request - handle Others
+  const typeOfRequestValue = document.getElementById('typeOfRequest').value;
+  const typeOfRequestDisplay = typeOfRequestValue === 'Others' 
+    ? document.getElementById('typeOfRequestOther').value 
+    : typeOfRequestValue;
+  document.getElementById('review-typeOfRequest').textContent = typeOfRequestDisplay;
+
+  // Request Details - ONLY capture from currently active type
+  const typeOfRequest = document.getElementById('typeOfRequest').value;
+  const detailsContent = document.getElementById('reviewDetailsContent');
+  const detailsTitle = document.getElementById('reviewDetailsTitle');
+  detailsContent.innerHTML = '';
+
+  // Set the section title based on request type
+  if (typeOfRequest === 'Editorial Participation') {
+    detailsTitle.textContent = 'Editorial Participation Details';
+  } else if (typeOfRequest === 'Media Partnership') {
+    detailsTitle.textContent = 'Media Partnership Details';
+  } else if (typeOfRequest === 'Paid Partnership') {
+    detailsTitle.textContent = 'Paid Partnership Details';
+  } else if (typeOfRequest === 'Others') {
+    detailsTitle.textContent = 'Other Request Details';
+  } else {
+    detailsTitle.textContent = 'Request Details';
+  }
+
+  if (typeOfRequest === 'Editorial Participation') {
+    const selectedEditorialTypes = Array.from(document.querySelectorAll('input[name="editorialType"]:checked'))
+      .map(cb => cb.value).join(', ');
+    const selectedDetailedInclusions = Array.from(document.querySelectorAll('input[name="detailedInclusions"]:checked'))
+      .map(cb => cb.value).filter(v => v !== 'Others').join(', ');
+    const otherInclusionValue = document.getElementById('otherInclusion').value;
+    const otherInclusionFormatted = otherInclusionValue 
+      ? otherInclusionValue.split('\n').filter(line => line.trim()).map(line => `• ${line.trim()}`).join('<br>')
+      : '';
+    detailsContent.innerHTML = `
+      <div class="review-item">
+        <span class="review-label">KOL Ambassadors:</span>
+        <span class="review-value">${selectedEditorialTypes || 'None selected'}</span>
+      </div>
+      ${selectedDetailedInclusions ? `
+      <div class="review-item">
+        <span class="review-label">Detailed KOL Ambassadors:</span>
+        <span class="review-value">${selectedDetailedInclusions}</span>
+      </div>` : ''}
+      ${otherInclusionFormatted ? `
+      <div class="review-item">
+        <span class="review-label">Other Inclusions:</span>
+        <span class="review-value">${otherInclusionFormatted}</span>
+      </div>` : ''}
+      <div class="review-item">
+        <span class="review-label">Number of KOLs:</span>
+        <span class="review-value">${document.getElementById('numberOfKOLsEditorial').value}</span>
+      </div>
+      <div class="review-item">
+        <span class="review-label">KOL Description:</span>
+        <span class="review-value">${document.getElementById('kolDescriptionEditorial').value}</span>
+      </div>
+    `;
+  } else if (typeOfRequest === 'Media Partnership') {
+    const selectedAmbassadors = Array.from(document.querySelectorAll('input[name="kolAmbassadorType"]:checked'))
+      .map(cb => cb.value).join(', ');
+    detailsContent.innerHTML = `
+      <div class="review-item">
+        <span class="review-label">KOL Ambassadors:</span>
+        <span class="review-value">${selectedAmbassadors || 'None selected'}</span>
+      </div>
+      <div class="review-item">
+        <span class="review-label">Number of KOLs:</span>
+        <span class="review-value">${document.getElementById('numberOfKOLsMedia').value}</span>
+      </div>
+      <div class="review-item">
+        <span class="review-label">KOL Description:</span>
+        <span class="review-value">${document.getElementById('kolDescriptionMedia').value}</span>
+      </div>
+    `;
+  } else if (typeOfRequest === 'Paid Partnership') {
+    const selectedPaidTypes = Array.from(document.querySelectorAll('input[name="paidType"]:checked'))
+      .map(cb => cb.value).join(', ');
+    const selectedPaidDetailedInclusions = Array.from(document.querySelectorAll('input[name="paidDetailedInclusions"]:checked'))
+      .map(cb => cb.value).filter(v => v !== 'Others').join(', ');
+    const paidOtherInclusionValue = document.getElementById('paidOtherInclusion').value;
+    const paidOtherInclusionFormatted = paidOtherInclusionValue 
+      ? paidOtherInclusionValue.split('\n').filter(line => line.trim()).map(line => `• ${line.trim()}`).join('<br>')
+      : '';
+    detailsContent.innerHTML = `
+      <div class="review-item">
+        <span class="review-label">Pitch/GO:</span>
+        <span class="review-value">${document.getElementById('pitchGo').value}</span>
+      </div>
+      <div class="review-item">
+        <span class="review-label">KOL Ambassadors:</span>
+        <span class="review-value">${selectedPaidTypes || 'None selected'}</span>
+      </div>
+      ${selectedPaidDetailedInclusions ? `
+      <div class="review-item">
+        <span class="review-label">Detailed KOL Ambassadors:</span>
+        <span class="review-value">${selectedPaidDetailedInclusions}</span>
+      </div>` : ''}
+      ${paidOtherInclusionFormatted ? `
+      <div class="review-item">
+        <span class="review-label">Other Inclusions:</span>
+        <span class="review-value">${paidOtherInclusionFormatted}</span>
+      </div>` : ''}
+      <div class="review-item">
+        <span class="review-label">Number of KOLs:</span>
+        <span class="review-value">${document.getElementById('numberOfKOLsPaid').value}</span>
+      </div>
+      <div class="review-item">
+        <span class="review-label">KOL Description:</span>
+        <span class="review-value">${document.getElementById('kolDescriptionPaid').value}</span>
+      </div>
+    `;
+  } else if (typeOfRequest === 'Others') {
+    detailsContent.innerHTML = `
+      <div class="review-item">
+        <span class="review-label">Number of KOLs:</span>
+        <span class="review-value">${document.getElementById('numberOfKOLsOthers').value}</span>
+      </div>
+      <div class="review-item">
+        <span class="review-label">KOL Description:</span>
+        <span class="review-value">${document.getElementById('kolDescriptionOthers').value}</span>
+      </div>
+    `;
+  }
+
+  // Deliverables - only show if not "Others" type
+  const typeForDeliverables = document.getElementById('typeOfRequest').value;
+  if (typeForDeliverables !== 'Others') {
+    // Separate deliverables by category for expanded view
+    const socialDeliverables = [];
+    const eventDeliverables = [];
+    const talentDeliverables = [];
+    
+    // Social deliverables with quantities
+    document.querySelectorAll('input[name="deliverable_qty"]').forEach(input => {
+      const qty = parseInt(input.value) || 0;
+      if (qty > 0) {
+        const label = input.closest('.deliverable-item').querySelector('.deliverable-label').textContent;
+        socialDeliverables.push(`${label} (${qty})`);
+      }
+    });
+    
+    // Event/Talent deliverables from checkboxes
+    document.querySelectorAll('input[name="deliverables"][data-category="event"]:checked').forEach(cb => {
+      eventDeliverables.push(cb.nextElementSibling.textContent);
+    });
+    document.querySelectorAll('input[name="deliverables"][data-category="talent"]:checked').forEach(cb => {
+      talentDeliverables.push(cb.nextElementSibling.textContent);
+    });
+    
+    const crossPostingToggle = document.getElementById('crossPostingToggle');
+    const crossPostingEnabled = crossPostingToggle ? crossPostingToggle.checked : false;
+    
+    const otherDeliverableValue = document.getElementById('otherDeliverable').value;
+    const otherDeliverableFormatted = otherDeliverableValue 
+      ? otherDeliverableValue.split('\n').filter(line => line.trim()).map(line => `• ${line.trim()}`).join('<br>')
+      : '';
+  
+    const hasDeliverables = socialDeliverables.length > 0 || eventDeliverables.length > 0 || talentDeliverables.length > 0 || otherDeliverableValue;
+    
+    if (hasDeliverables) {
+      document.getElementById('reviewDeliverablesSection').style.display = 'block';
+      const deliverablesContent = document.getElementById('reviewDeliverablesContent');
+      deliverablesContent.innerHTML = `
+        ${socialDeliverables.length > 0 ? `
+        <div class="review-item">
+          <span class="review-label">Post Engagement:</span>
+          <span class="review-value">${socialDeliverables.join(', ')}${crossPostingEnabled ? ' <span class="review-badge">+ Cross-post</span>' : ''}</span>
+        </div>` : ''}
+        ${eventDeliverables.length > 0 ? `
+        <div class="review-item">
+          <span class="review-label">Event Requirements:</span>
+          <span class="review-value">${eventDeliverables.join(', ')}</span>
+        </div>` : ''}
+        ${talentDeliverables.length > 0 ? `
+        <div class="review-item">
+          <span class="review-label">Talent Requirements:</span>
+          <span class="review-value">${talentDeliverables.join(', ')}</span>
+        </div>` : ''}
+        ${otherDeliverableFormatted ? `
+        <div class="review-item">
+          <span class="review-label">Other Deliverables:</span>
+          <span class="review-value">${otherDeliverableFormatted}</span>
+        </div>` : ''}
+      `;
+    } else {
+      document.getElementById('reviewDeliverablesSection').style.display = 'none';
+    }
+
+    // Posting Requirements - Expanded summary
+    const targetLiveDate = document.getElementById('targetLiveDate').value;
+    const mandatories = document.getElementById('mandatories').value;
+    const references = document.getElementById('references').value;
+    const hasPostingReqs = targetLiveDate || mandatories || references;
+    
+    if (hasPostingReqs) {
+      document.getElementById('reviewPostingSection').style.display = 'block';
+      const postingContent = document.getElementById('reviewPostingContent');
+      
+      // Format date nicely
+      let formattedDate = '';
+      if (targetLiveDate) {
+        const dateObj = new Date(targetLiveDate + 'T00:00:00');
+        formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      }
+      
+      postingContent.innerHTML = `
+        ${targetLiveDate ? `
+        <div class="review-item">
+          <span class="review-label">Target Live Date:</span>
+          <span class="review-value">${formattedDate}</span>
+        </div>` : ''}
+        ${socialDeliverables.length > 0 ? `
+        <div class="review-item">
+          <span class="review-label">Platforms:</span>
+          <span class="review-value">${socialDeliverables.join(', ')}</span>
+        </div>` : ''}
+        ${crossPostingEnabled ? `
+        <div class="review-item">
+          <span class="review-label">Cross-Posting:</span>
+          <span class="review-value">Enabled</span>
+        </div>` : ''}
+        ${mandatories ? `
+        <div class="review-item">
+          <span class="review-label">Mandatories:</span>
+          <span class="review-value">${mandatories}</span>
+        </div>` : ''}
+        ${references ? `
+        <div class="review-item">
+          <span class="review-label">References:</span>
+          <span class="review-value"><a href="${references}" target="_blank" style="color: var(--brand-primary);">${references}</a></span>
+        </div>` : ''}
+      `;
+    } else {
+      document.getElementById('reviewPostingSection').style.display = 'none';
+    }
+
+    // Event Details - Expanded summary
+    const hasEventDetails = document.getElementById('eventActivityName').value;
+    
+    if (hasEventDetails) {
+      document.getElementById('reviewEventSection').style.display = 'block';
+      const eventContent = document.getElementById('reviewEventContent');
+      const formattedTime = getFormattedTimeRange();
+      
+      // Format event date nicely
+      const eventDateValue = document.getElementById('eventDate').value;
+      let formattedEventDate = '';
+      if (eventDateValue) {
+        const dateObj = new Date(eventDateValue + 'T00:00:00');
+        formattedEventDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      }
+      
+      // Build combined date/time string
+      let dateTimeString = '';
+      if (formattedEventDate && formattedTime) {
+        dateTimeString = `${formattedEventDate} at ${formattedTime}`;
+      } else if (formattedEventDate) {
+        dateTimeString = formattedEventDate;
+      } else if (formattedTime) {
+        dateTimeString = formattedTime;
+      }
+      
+      eventContent.innerHTML = `
+        <div class="review-item">
+          <span class="review-label">Event/Activity Name:</span>
+          <span class="review-value">${document.getElementById('eventActivityName').value}</span>
+        </div>
+        ${dateTimeString ? `
+        <div class="review-item">
+          <span class="review-label">Date & Time:</span>
+          <span class="review-value">${dateTimeString}</span>
+        </div>` : ''}
+        ${eventDeliverables.length > 0 ? `
+        <div class="review-item">
+          <span class="review-label">Event Type:</span>
+          <span class="review-value">${eventDeliverables.join(', ')}</span>
+        </div>` : ''}
+        ${talentDeliverables.length > 0 ? `
+        <div class="review-item">
+          <span class="review-label">Talent Requirements:</span>
+          <span class="review-value">${talentDeliverables.join(', ')}</span>
+        </div>` : ''}
+        ${document.getElementById('eventVenueAddress').value ? `
+        <div class="review-item">
+          <span class="review-label">Event Venue/Address:</span>
+          <span class="review-value">${document.getElementById('eventVenueAddress').value}</span>
+        </div>` : ''}
+        ${document.getElementById('eventNotes').value ? `
+        <div class="review-item">
+          <span class="review-label">Event Notes:</span>
+          <span class="review-value">${document.getElementById('eventNotes').value}</span>
+        </div>` : ''}
+      `;
+    } else {
+      document.getElementById('reviewEventSection').style.display = 'none';
+    }
+  } else {
+    // "Others" type - hide deliverables, posting, and event sections
+    document.getElementById('reviewDeliverablesSection').style.display = 'none';
+    document.getElementById('reviewPostingSection').style.display = 'none';
+    document.getElementById('reviewEventSection').style.display = 'none';
+  }
+}
+
+function showConfirmationDialog() {
+  const dialog = document.createElement('div');
+  dialog.className = 'confirmation-dialog';
+  dialog.innerHTML = `
+    <div class="confirmation-content">
+      <h3>Confirm Submission</h3>
+      <p>Are you sure you want to submit this KOL request? Please review all information carefully before proceeding.</p>
+      <div class="confirmation-buttons">
+        <button type="button" class="btn btn-secondary" onclick="closeConfirmationDialog()">Cancel</button>
+        <button type="button" class="btn btn-success" onclick="confirmSubmit()">Yes, Submit</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+}
+
+function closeConfirmationDialog() {
+  const dialog = document.querySelector('.confirmation-dialog');
+  if (dialog) {
+    dialog.remove();
+  }
+}
+
+function confirmSubmit() {
+  closeConfirmationDialog();
+  handleSubmit();
+}
+
+function handleSubmit() {
+  const formData = collectFormData();
+  
+  // Show loading spinner using class
+  document.getElementById('loadingSpinner').classList.add('active');
+  
+  // Hide form content
+  document.querySelector('.container').style.opacity = '0.3';
+  document.querySelector('.container').style.pointerEvents = 'none';
+
+  // Submit to Google Apps Script
+  google.script.run
+    .withSuccessHandler(onSubmitSuccess)
+    .withFailureHandler(onSubmitFailure)
+    .submitForm(formData);
+}
+
+function collectFormData() {
+  const typeOfRequest = document.getElementById('typeOfRequest').value;
+  
+  // Handle Business Unit - check for Others
+  const businessUnitValue = document.getElementById('businessUnit').value;
+  const businessUnit = businessUnitValue === 'Others' 
+    ? document.getElementById('businessUnitOther').value 
+    : businessUnitValue;
+  
+  // Collect Participating Brands
+  const participatingBrands = Array.from(document.querySelectorAll('input[name="participatingBrands"]:checked'))
+    .map(cb => cb.value);
+  
+  // Handle Type of Request - check for Others
+  const actualTypeOfRequest = typeOfRequest === 'Others' 
+    ? document.getElementById('typeOfRequestOther').value 
+    : typeOfRequest;
+  
+  const formData = {
+    requestorName: document.getElementById('requestorName').value,
+    requestorEmail: document.getElementById('requestorEmail').value,
+    businessUnit: businessUnit,
+    teamBrand: participatingBrands.join(', '),
+    participatingBrands: participatingBrands,
+    typeOfRequest: actualTypeOfRequest
+  };
+
+  // Add type-specific fields
+  if (typeOfRequest === 'Editorial Participation') {
+    // Collect multiple selected editorial types as array
+    formData.editorialTypes = Array.from(document.querySelectorAll('input[name="editorialType"]:checked'))
+      .map(cb => cb.value);
+    // Collect selected detailed inclusions
+    formData.detailedInclusions = Array.from(document.querySelectorAll('input[name="detailedInclusions"]:checked'))
+      .map(cb => cb.value)
+      .filter(v => v !== 'Others'); // Filter out "Others" since we have a separate field for that
+    formData.otherInclusion = document.getElementById('otherInclusion').value;
+    formData.numberOfKOLs = document.getElementById('numberOfKOLsEditorial').value;
+    formData.kolDescription = document.getElementById('kolDescriptionEditorial').value;
+  } else if (typeOfRequest === 'Media Partnership') {
+    // Collect multiple selected ambassador types as array
+    formData.kolAmbassadorTypes = Array.from(document.querySelectorAll('input[name="kolAmbassadorType"]:checked'))
+      .map(cb => cb.value);
+    formData.numberOfKOLs = document.getElementById('numberOfKOLsMedia').value;
+    formData.kolDescription = document.getElementById('kolDescriptionMedia').value;
+  } else if (typeOfRequest === 'Paid Partnership') {
+    formData.pitchGo = document.getElementById('pitchGo').value;
+    // Collect multiple selected paid types (KOL Ambassadors) as array
+    formData.paidTypes = Array.from(document.querySelectorAll('input[name="paidType"]:checked'))
+      .map(cb => cb.value);
+    // Collect selected detailed inclusions
+    formData.paidDetailedInclusions = Array.from(document.querySelectorAll('input[name="paidDetailedInclusions"]:checked'))
+      .map(cb => cb.value)
+      .filter(v => v !== 'Others'); // Filter out "Others" since we have a separate field for that
+    formData.paidOtherInclusion = document.getElementById('paidOtherInclusion').value;
+    formData.numberOfKOLs = document.getElementById('numberOfKOLsPaid').value;
+    formData.kolDescription = document.getElementById('kolDescriptionPaid').value;
+  } else if (typeOfRequest === 'Others') {
+    formData.numberOfKOLs = document.getElementById('numberOfKOLsOthers').value;
+    formData.kolDescription = document.getElementById('kolDescriptionOthers').value;
+  }
+
+  // Deliverables - only collect if not "Others" type
+  if (typeOfRequest !== 'Others') {
+    const deliverables = {};
+    
+    // Collect social deliverables with quantities
+    document.querySelectorAll('input[name="deliverable_qty"]').forEach(input => {
+      const qty = parseInt(input.value) || 0;
+      if (qty > 0) {
+        const deliverableName = input.dataset.deliverable;
+        deliverables[deliverableName] = qty;
+      }
+    });
+    
+    // Collect event/talent deliverables from checkboxes (as boolean true)
+    document.querySelectorAll('input[name="deliverables"]:checked').forEach(cb => {
+      deliverables[cb.value] = true;
+    });
+    
+    if (Object.keys(deliverables).length > 0) {
+      formData.deliverables = deliverables;
+    }
+    
+    // Cross-posting toggle
+    const crossPostingToggle = document.getElementById('crossPostingToggle');
+    if (crossPostingToggle) {
+      formData.crossPosting = crossPostingToggle.checked ? 'Yes' : 'No';
+    }
+
+    // Other deliverable at top level
+    formData.otherDeliverable = document.getElementById('otherDeliverable').value;
+
+    // Posting Requirements
+    formData.targetLiveDate = document.getElementById('targetLiveDate').value;
+    formData.mandatories = document.getElementById('mandatories').value;
+    formData.references = document.getElementById('references').value;
+
+    // Event Details
+    formData.eventActivityName = document.getElementById('eventActivityName').value;
+    formData.eventDate = document.getElementById('eventDate').value;
+    formData.eventTime = getFormattedTimeRange();
+    formData.eventVenueAddress = document.getElementById('eventVenueAddress').value;
+    formData.eventNotes = document.getElementById('eventNotes').value;
+  }
+
+  return formData;
+}
+
+function onSubmitSuccess(response) {
+  // Hide loading spinner
+  document.getElementById('loadingSpinner').classList.remove('active');
+  
+  // Restore container
+  document.querySelector('.container').style.opacity = '1';
+  document.querySelector('.container').style.pointerEvents = 'auto';
+  
+  if (response.success) {
+    document.getElementById('requestIdDisplay').textContent = response.requestId;
+    document.getElementById('successMessage').style.display = 'block';
+    document.getElementById('kolForm').style.display = 'none';
+    document.querySelector('.progress-bar').style.display = 'none';
+  } else {
+    showToast('error', 'Submission Failed', response.error || 'An error occurred while submitting your request. Please try again.');
+  }
+}
+
+function onSubmitFailure(error) {
+  // Hide loading spinner
+  document.getElementById('loadingSpinner').classList.remove('active');
+  
+  // Restore container
+  document.querySelector('.container').style.opacity = '1';
+  document.querySelector('.container').style.pointerEvents = 'auto';
+  
+  showToast('error', 'Submission Failed', error.message || 'An unexpected error occurred. Please try again.');
+}
+
+function resetForm() {
+  // Reset the form fields
+  document.getElementById('kolForm').reset();
+  
+  // Hide all dynamic fields
+  document.querySelectorAll('.dynamic-fields').forEach(el => {
+    el.classList.remove('active');
+  });
+  
+  // Hide success message
+  document.getElementById('successMessage').style.display = 'none';
+  
+  // Show form elements
+  document.getElementById('kolForm').style.display = 'block';
+  document.querySelector('.progress-bar').style.display = 'flex';
+  document.querySelector('.form-navigation').style.display = 'flex';
+  
+  // Reset to step 1
+  currentStep = 1;
+  showStep(currentStep);
+  
+  // Reset progress bar styling
+  document.querySelectorAll('.progress-step').forEach((step, index) => {
+    step.classList.remove('active', 'completed');
+    if (index === 0) {
+      step.classList.add('active');
+    }
+  });
+  
+  // Reset any error styling on inputs
+  document.querySelectorAll('input, select, textarea').forEach(field => {
+    field.style.borderColor = '';
+  });
+}
+</script>
