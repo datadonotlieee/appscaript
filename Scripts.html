@@ -1138,6 +1138,12 @@ function clearAllDeliverables() {
   // Reset cross-posting toggle
   const crossPostingToggle = document.getElementById('crossPostingToggle');
   if (crossPostingToggle) crossPostingToggle.checked = false;
+  
+  // Clear cross-posting instructions
+  const crossPostingInstructions = document.getElementById('crossPostingInstructions');
+  if (crossPostingInstructions) crossPostingInstructions.value = '';
+  const crossPostingInstructionsGroup = document.getElementById('crossPostingInstructionsGroup');
+  if (crossPostingInstructionsGroup) crossPostingInstructionsGroup.style.display = 'none';
 }
 
 // Deliverables configuration by type of request
@@ -1279,12 +1285,12 @@ function setupEditorialTypeListener() {
   
   // Detailed KOL Ambassadors - alphabetically sorted within each group
   const packageInclusions = {
-    'Cosmo Vibe Tribe': ['Cosmo asks', 'Cosmo awards', 'Cosmo events', 'Cosmo goes to', 'Cosmo tries', 'Cosmo vibe check'],
-    'PEP Crew': ['PEP asks', 'PEP goes to', 'PEP live', 'PEP podcast'],
-    'Preview Clique': ['Preview asks', 'Preview events', 'Preview goes to'],
-    'SP Board of Experts': ['Citation', 'Isang tanong, isang sagot', 'Resource person / article', 'Speaker for event', 'SPV engagement'],
-    'SP Squad': ['SP awards', 'SP events', 'SP goes to', 'SP movie premiere', 'SP POV', 'SPV engagement'],
-    'Spot Circle': ['Spot 50 great', 'Spot events', 'Spot tries', 'Spot visits', 'Spotted']
+    'Cosmo Vibe Tribe': ['Cosmo Asks', 'Cosmo Awards', 'Cosmo Events', 'Cosmo Goes To', 'Cosmo Tries', 'Cosmo Vibe Check'],
+    'PEP Crew': ['PEP Asks', 'PEP Goes To', 'PEP Live', 'PEP Podcast'],
+    'Preview Clique': ['Preview Asks', 'Preview Events', 'Preview Goes To'],
+    'SP Board of Experts': ['Citation', 'Isang Tanong, Isang Sagot', 'Resource Person / Article', 'Speaker For Event', 'SPV Engagement'],
+    'SP Squad': ['SP Awards', 'SP Events', 'SP Goes To', 'SP Movie Premiere', 'SP POV', 'SPV Engagement'],
+    'Spot Circle': ['Spot 50 Great', 'Spot Events', 'Spot Tries', 'Spot Visits', 'Spotted']
   };
 
   function updateInclusionsPreview() {
@@ -1362,12 +1368,12 @@ function setupPaidTypeListener() {
   
   // Detailed KOL Ambassadors - same as Editorial Participation
   const packageInclusions = {
-    'Cosmo Vibe Tribe': ['Cosmo asks', 'Cosmo awards', 'Cosmo events', 'Cosmo goes to', 'Cosmo tries', 'Cosmo vibe check'],
-    'PEP Crew': ['PEP asks', 'PEP goes to', 'PEP live', 'PEP podcast'],
-    'Preview Clique': ['Preview asks', 'Preview events', 'Preview goes to'],
-    'SP Board of Experts': ['Citation', 'Isang tanong, isang sagot', 'Resource person / article', 'Speaker for event', 'SPV engagement'],
-    'SP Squad': ['SP awards', 'SP events', 'SP goes to', 'SP movie premiere', 'SP POV', 'SPV engagement'],
-    'Spot Circle': ['Spot 50 great', 'Spot events', 'Spot tries', 'Spot visits', 'Spotted']
+    'Cosmo Vibe Tribe': ['Cosmo Asks', 'Cosmo Awards', 'Cosmo Events', 'Cosmo Goes To', 'Cosmo Tries', 'Cosmo Vibe Check'],
+    'PEP Crew': ['PEP Asks', 'PEP Goes To', 'PEP Live', 'PEP Podcast'],
+    'Preview Clique': ['Preview Asks', 'Preview Events', 'Preview Goes To'],
+    'SP Board of Experts': ['Citation', 'Isang Tanong, Isang Sagot', 'Resource Person / Article', 'Speaker For Event', 'SPV Engagement'],
+    'SP Squad': ['SP Awards', 'SP Events', 'SP Goes To', 'SP Movie Premiere', 'SP POV', 'SPV Engagement'],
+    'Spot Circle': ['Spot 50 Great', 'Spot Events', 'Spot Tries', 'Spot Visits', 'Spotted']
   };
 
   function updatePaidInclusionsPreview() {
@@ -1529,6 +1535,23 @@ function setupDeliverablesListener() {
         otherDeliverableGroup.classList.remove('active');
         otherDeliverableInput.removeAttribute('required');
         otherDeliverableInput.value = '';
+      }
+    });
+  }
+
+  // Handle cross-posting toggle
+  const crossPostingToggle = document.getElementById('crossPostingToggle');
+  const crossPostingInstructionsGroup = document.getElementById('crossPostingInstructionsGroup');
+  if (crossPostingToggle && crossPostingInstructionsGroup) {
+    crossPostingToggle.addEventListener('change', function() {
+      const crossPostingInstructions = document.getElementById('crossPostingInstructions');
+      if (this.checked) {
+        crossPostingInstructionsGroup.style.display = 'block';
+        crossPostingInstructions.setAttribute('required', 'required');
+      } else {
+        crossPostingInstructionsGroup.style.display = 'none';
+        crossPostingInstructions.removeAttribute('required');
+        crossPostingInstructions.value = '';
       }
     });
   }
@@ -1872,6 +1895,9 @@ function populateReview() {
       ? otherDeliverableValue.split('\n').filter(line => line.trim()).map(line => `• ${line.trim()}`).join('<br>')
       : '';
   
+    // Cross-Posting Instructions for deliverables section
+    const crossPostingInstructions = document.getElementById('crossPostingInstructions').value;
+    
     const hasDeliverables = socialDeliverables.length > 0 || eventDeliverables.length > 0 || talentDeliverables.length > 0 || otherDeliverableValue;
     
     if (hasDeliverables) {
@@ -1882,6 +1908,11 @@ function populateReview() {
         <div class="review-item">
           <span class="review-label">Post Engagement:</span>
           <span class="review-value">${socialDeliverables.join(', ')}${crossPostingEnabled ? ' <span class="review-badge">+ Cross-post</span>' : ''}</span>
+        </div>` : ''}
+        ${crossPostingEnabled && crossPostingInstructions ? `
+        <div class="review-item">
+          <span class="review-label">Cross-Posting Instructions:</span>
+          <span class="review-value">${crossPostingInstructions}</span>
         </div>` : ''}
         ${eventDeliverables.length > 0 ? `
         <div class="review-item">
@@ -2152,6 +2183,10 @@ function collectFormData() {
     const crossPostingToggle = document.getElementById('crossPostingToggle');
     if (crossPostingToggle) {
       formData.crossPosting = crossPostingToggle.checked ? 'Yes' : 'No';
+      // Add cross-posting instructions if cross-posting is enabled
+      if (crossPostingToggle.checked) {
+        formData.crossPostingInstructions = document.getElementById('crossPostingInstructions').value;
+      }
     }
 
     // Other deliverable at top level

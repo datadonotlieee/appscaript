@@ -728,6 +728,15 @@
         </div>`;
     }
     
+    // Add cross-posting instructions if applicable
+    if (crossPostingEnabled && formData.crossPostingInstructions) {
+        html += `
+        <div class="review-item" style="padding: 10px 0; border-bottom: ${formData.otherDeliverable ? '1px solid #e5e5e5' : 'none'};">
+            <span class="review-label" style="display: block; color: #737373; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;">Cross-Posting Instructions</span>
+            <span class="review-value" style="display: block; color: #171717; font-weight: 500; font-size: 14px;">${formData.crossPostingInstructions}</span>
+        </div>`;
+    }
+    
     if (formData.otherDeliverable) {
         const formatted = formData.otherDeliverable.split('\n').filter(line => line.trim()).map(line => '• ' + line.trim()).join('<br>');
         html += `
@@ -1205,6 +1214,11 @@
         }
         facts.push({ title: 'Selected Deliverables', value: value });
         }
+    }
+    
+    // Add cross-posting instructions if applicable
+    if (crossPostingEnabled && formData.crossPostingInstructions) {
+        facts.push({ title: 'Cross-Posting Instructions', value: formData.crossPostingInstructions });
     }
     
     if (formData.otherDeliverable) {
