@@ -35,7 +35,7 @@
         // Company email - used as both sender and recipient
         // Note: In Google Apps Script, the sender is always the account running the script
         // This email receives all form submission notifications
-        COMPANY_EMAIL: 'boborol.marcelangelo.beloy@gmail.com'
+        COMPANY_EMAIL: 'cloutplus@gmail.com'
     },
     
     // Microsoft Teams Notification Settings (via Power Automate Workflow)
@@ -260,6 +260,7 @@
         qtyToValue(d.igStories),
         // Cross-posting
         data.crossPosting || 'No',
+        data.crossPostingInstructions || '',
         // Event - boolean checkboxes
         boolToYes(d.eventAttendance),
         boolToYes(d.eventParticipation),
@@ -1494,6 +1495,7 @@
         'IG Stories (Qty)',
         // Cross-posting
         'Cross-posting',
+        'Cross-Posting Instructions',
         // Event
         'Event Attendance',
         'Event Participation',
